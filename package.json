@@ -1,0 +1,27 @@
+{
+  "name": "escuela",
+  "version": "1.0.0",
+  "description": "Proyecto backend sobre mi escuela",
+  "main": "index.js",
+  
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cristofer66X6/Escuela.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type":"module",
+  "bugs": {
+    "url": "https://github.com/Cristofer66X6/Escuela/issues"
+  },
+  "homepage": "https://github.com/Cristofer66X6/Escuela#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "pg": "^8.16.3"
+  }
+}

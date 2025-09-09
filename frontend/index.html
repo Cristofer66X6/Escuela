@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gestión Escolar</title>
+</head>
+<body>
+  <h1>Gestión de Estudiantes</h1>
+
+  <!-- Formulario para agregar estudiante -->
+  <form id="form-estudiante">
+    <input type="text" id="nombre" placeholder="Nombre" required />
+    <input type="text" id="carrera" placeholder="Carrera" required />
+    <input type="text" id="numero_control" placeholder="Número de Control" required />
+    <input type="text" id="periodo_inicio" placeholder="Periodo Inicio" />
+    <input type="number" id="semestre" placeholder="Semestre" />
+    <button type="submit">Agregar</button>
+  </form>
+
+  <h2>Lista de Estudiantes</h2>
+  <ul id="lista-estudiantes"></ul>
+
+  <script src="app.js"></script>
+</body>
+</html>
