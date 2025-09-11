@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Avance Estudiantil</title>
+</head>
+<body>
+  <h1>Avance por estudiante</h1>
+
+  <input type="number" id="idEst" placeholder="ID estudiante">
+  <button onclick="verAvance()">Ver Avance</button>
+
+  <table border="1">
+    <thead>
+      <tr><th>Materia</th><th>Créditos</th><th>Estado</th></tr>
+    </thead>
+    <tbody id="tabla"></tbody>
+  </table>
+
+  <script>
+    function verAvance() {
+      const id = document.getElementById("idEst").value;
+      fetch(`http://localhost:3000/avance/${id}`)
+        .then(res => res.json())
+        .then(data => {
+          const tabla = document.getElementById("tabla");
+          tabla.innerHTML = "";
+          data.forEach(row => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td>${row.nombre}</td><td>${row.creditos}</td><td>${row.estado}</td>`;
+            tabla.appendChild(tr);
+          });
+        });
+    }
+  </script>
+</body>
+</html>

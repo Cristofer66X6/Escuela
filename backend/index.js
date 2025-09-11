@@ -1,68 +1,173 @@
-import express from 'express';
-import cors from 'cors';
-import pool from './db.js';
+import express from "express";
+import cors from "cors";
+import pool from "./db.js";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get('/estudiantes', (req, res) => {
-  pool.query('SELECT * FROM estudiantes', (error, results) => {
-    if (error) {
-      console.error('Error al obtener estudiantes:', error);
-      res.status(500).json({ error: 'Error interno del servidor' });
-    } else {
-      res.json(results.rows);
-    }
-  });
-});
+/* ===================== AUTENTICACIÓN ===================== */
 
-app.post('/estudiantes', async (req,  res) => {
-    const { nombre, carrera, numero_control, periodo_inicio, semestre } = req.body;
+// Registro
+app.post("/register", async (req, res) => {
+  const { nombre, carrera, numero_control, periodo_inicio, semestre, contrasena } = req.body;
+
+  try {
     const result = await pool.query(
-    `INSERT INTO estudiantes (nombre, carrera, numero_control, periodo_inicio, semestre) 
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [nombre, carrera, numero_control, periodo_inicio, semestre]
-  );
-  res.json(result.rows[0]);
+      `INSERT INTO estudiantes (nombre, carrera, numero_control, periodo_inicio, semestre, contrasena)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, nombre, numero_control`,
+      [nombre, carrera, numero_control, periodo_inicio, semestre, contrasena]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Error al registrar usuario:", err);
+    res.status(400).json({ error: "No se pudo registrar el usuario" });
+  }
 });
 
-app.get('/materias', async (req, res) => {
-    const result = await pool.query('SELECT * FROM materias');
+// Login
+app.post("/login", async (req, res) => {
+  const { numero_control, contrasena } = req.body;
+  try {
+    const result = await pool.query(
+      "SELECT * FROM estudiantes WHERE numero_control=$1 AND contrasena=$2",
+      [numero_control, contrasena]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: "Credenciales incorrectas" });
+    }
+
+    res.json({ message: "Login exitoso", user: result.rows[0] });
+  } catch (err) {
+    console.error("Error en login:", err);
+    res.status(500).json({ error: "Error en el servidor" });
+  }
+});
+
+// Actualizar usuario
+app.put("/usuario/:id", async (req, res) => {
+  const { id } = req.params;
+  const { nombre, carrera, contrasena } = req.body;
+
+  try {
+    const result = await pool.query(
+      `UPDATE estudiantes
+       SET nombre=$1, carrera=$2, contrasena=$3
+       WHERE id=$4
+       RETURNING *`,
+      [nombre, carrera, contrasena, id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Error al actualizar usuario:", err);
+    res.status(400).json({ error: "No se pudo actualizar el usuario" });
+  }
+});
+
+// Eliminar usuario
+app.delete("/usuario/:id", async (req, res) => {
+  try {
+    await pool.query("DELETE FROM estudiantes WHERE id=$1", [req.params.id]);
+    res.json({ message: "Usuario eliminado" });
+  } catch (err) {
+    console.error("Error al eliminar usuario:", err);
+    res.status(400).json({ error: "No se pudo eliminar el usuario" });
+  }
+});
+
+// Listar estudiantes
+app.get("/estudiantes", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM estudiantes");
     res.json(result.rows);
+  } catch (error) {
+    console.error("Error al obtener estudiantes:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
 });
 
+/* ===================== MATERIAS ===================== */
+
+// Crear materia
 app.post("/materias", async (req, res) => {
-  const { nombre, carrera, especialidad, es_recurse } = req.body;
-  const result = await pool.query(
-    `INSERT INTO materias (nombre, carrera, especialidad, es_recurse) 
-     VALUES ($1, $2, $3, $4) RETURNING *`,
-    [nombre, carrera, especialidad, es_recurse]
-  );
-  res.json(result.rows[0]);
+  const { nombre, creditos } = req.body;
+  try {
+    const result = await pool.query(
+      "INSERT INTO materias (nombre, creditos) VALUES ($1, $2) RETURNING *",
+      [nombre, creditos]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Error al crear materia:", err);
+    res.status(400).json({ error: "No se pudo crear la materia" });
+  }
 });
 
-
-app.get("/avance", async (req, res) => {
-  const result = await pool.query(
-    `SELECT a.id, e.nombre AS estudiante, m.nombre AS materia, a.estado, a.calificacion
-     FROM avance a
-     JOIN estudiantes e ON e.id = a.estudiante_id
-     JOIN materias m ON m.id = a.materia_id`
-  );
-  res.json(result.rows);
+// Ver todas las materias
+app.get("/materias", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM materias");
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error al obtener materias:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
 });
 
+/* ===================== AVANCE (Estudiantes ↔ Materias) ===================== */
+
+// Inscribir estudiante en una materia
 app.post("/avance", async (req, res) => {
-  const { estudiante_id, materia_id, estado, calificacion } = req.body;
-  const result = await pool.query(
-    `INSERT INTO avance (estudiante_id, materia_id, estado, calificacion) 
-     VALUES ($1, $2, $3, $4) RETURNING *`,
-    [estudiante_id, materia_id, estado, calificacion]
-  );
-  res.json(result.rows[0]);
+  const { id_estudiante, id_materia } = req.body;
+  try {
+    const result = await pool.query(
+      "INSERT INTO avance (id_estudiante, id_materia) VALUES ($1, $2) RETURNING *",
+      [id_estudiante, id_materia]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Error al inscribir materia:", err);
+    res.status(400).json({ error: "Error al inscribir materia" });
+  }
 });
+
+// Ver avance de un estudiante
+app.get("/avance/:id_estudiante", async (req, res) => {
+  const { id_estudiante } = req.params;
+  try {
+    const result = await pool.query(
+      `SELECT a.id, m.nombre, m.creditos, a.estado
+       FROM avance a
+       JOIN materias m ON a.id_materia = m.id
+       WHERE a.id_estudiante = $1`,
+      [id_estudiante]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error al obtener avance:", err);
+    res.status(400).json({ error: "Error al obtener avance" });
+  }
+});
+
+// Actualizar estado de una materia en el avance (Aprobada / Reprobada / En curso)
+app.put("/avance/:id", async (req, res) => {
+  const { id } = req.params;
+  const { estado } = req.body;
+  try {
+    const result = await pool.query(
+      "UPDATE avance SET estado=$1 WHERE id=$2 RETURNING *",
+      [estado, id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Error al actualizar avance:", err);
+    res.status(400).json({ error: "Error al actualizar avance" });
+  }
+});
+
+/* ===================== INICIO SERVIDOR ===================== */
 
 app.listen(3000, () => {
-  console.log("Servidor corriendo en http://localhost:3000");
+  console.log("✅ Servidor corriendo en http://localhost:3000");
 });

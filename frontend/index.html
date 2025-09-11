@@ -1,25 +1,150 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Gestión Escolar</title>
+  <meta charset="UTF-8">
+  <title>Gestión Escolar - Login</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #4e54c8, #8f94fb);
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      width: 350px;
+      text-align: center;
+      animation: fadeIn 0.8s ease;
+    }
+
+    h1 {
+      margin-bottom: 1rem;
+      color: #4e54c8;
+    }
+
+    form {
+      display: none;
+      margin-top: 1rem;
+    }
+
+    form.active {
+      display: block;
+    }
+
+    input {
+      width: 90%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      outline: none;
+      transition: 0.3s;
+    }
+
+    input:focus {
+      border-color: #4e54c8;
+      box-shadow: 0 0 5px rgba(78, 84, 200, 0.5);
+    }
+
+    button {
+      width: 95%;
+      padding: 10px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #4e54c8;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #3a3fb3;
+    }
+
+    .links {
+      margin-top: 1rem;
+    }
+
+    .links a {
+      display: block;
+      color: #4e54c8;
+      text-decoration: none;
+      margin: 5px 0;
+      font-size: 0.9rem;
+      transition: 0.3s;
+    }
+
+    .links a:hover {
+      text-decoration: underline;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
 <body>
-  <h1>Gestión de Estudiantes</h1>
+  <div class="container">
+    <h1>Gestión Escolar</h1>
 
-  <!-- Formulario para agregar estudiante -->
-  <form id="form-estudiante">
-    <input type="text" id="nombre" placeholder="Nombre" required />
-    <input type="text" id="carrera" placeholder="Carrera" required />
-    <input type="text" id="numero_control" placeholder="Número de Control" required />
-    <input type="text" id="periodo_inicio" placeholder="Periodo Inicio" />
-    <input type="number" id="semestre" placeholder="Semestre" />
-    <button type="submit">Agregar</button>
-  </form>
+    <!-- LOGIN -->
+    <form id="form-login" class="active">
+      <input type="text" id="login-numero" placeholder="Número de control" required>
+      <input type="password" id="login-pass" placeholder="Contraseña" required>
+      <button type="submit">Ingresar</button>
+    </form>
 
-  <h2>Lista de Estudiantes</h2>
-  <ul id="lista-estudiantes"></ul>
+    <!-- REGISTRO -->
+    <form id="form-register">
+      <input type="text" id="reg-nombre" placeholder="Nombre" required>
+      <input type="text" id="reg-carrera" placeholder="Carrera" required>
+      <input type="text" id="reg-numero" placeholder="Número de control" required>
+      <input type="text" id="reg-periodo" placeholder="Periodo inicio">
+      <input type="number" id="reg-semestre" placeholder="Semestre">
+      <input type="password" id="reg-pass" placeholder="Contraseña" required>
+      <button type="submit">Registrarse</button>
+    </form>
+
+    <!-- ACTUALIZAR -->
+    <form id="form-update">
+      <input type="number" id="upd-id" placeholder="ID usuario" required>
+      <input type="text" id="upd-nombre" placeholder="Nuevo nombre">
+      <input type="text" id="upd-carrera" placeholder="Nueva carrera">
+      <input type="password" id="upd-pass" placeholder="Nueva contraseña">
+      <button type="submit">Actualizar</button>
+    </form>
+
+    <!-- ELIMINAR -->
+    <form id="form-delete">
+      <input type="number" id="del-id" placeholder="ID usuario" required>
+      <button type="submit">Eliminar</button>
+    </form>
+
+    <!-- LINKS -->
+    <div class="links">
+      <a href="#" onclick="mostrarForm('form-login')">Iniciar Sesión</a>
+      <a href="#" onclick="mostrarForm('form-register')">Registrarse</a>
+      <a href="#" onclick="mostrarForm('form-update')">Actualizar Usuario</a>
+      <a href="#" onclick="mostrarForm('form-delete')">Eliminar Usuario</a>
+    </div>
+  </div>
 
   <script src="app.js"></script>
+  <script>
+    function mostrarForm(id) {
+      document.querySelectorAll("form").forEach(f => f.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+    }
+  </script>
 </body>
 </html>

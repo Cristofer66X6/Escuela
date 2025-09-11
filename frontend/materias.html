@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Materias</title>
+</head>
+<body>
+  <h1>Materias</h1>
+
+  <form id="form-materia">
+    <input type="text" id="nombre" placeholder="Nombre materia" required>
+    <input type="number" id="creditos" placeholder="Créditos" required>
+    <button type="submit">Agregar</button>
+  </form>
+
+  <h2>Lista</h2>
+  <ul id="lista"></ul>
+
+  <script>
+    const form = document.getElementById("form-materia");
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      const nombre = document.getElementById("nombre").value;
+      const creditos = document.getElementById("creditos").value;
+      await fetch("http://localhost:3000/materias", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre, creditos })
+      });
+      location.reload();
+    });
+
+    fetch("http://localhost:3000/materias")
+      .then(res => res.json())
+      .then(data => {
+        const lista = document.getElementById("lista");
+        data.forEach(m => {
+          const li = document.createElement("li");
+          li.textContent = `${m.id} - ${m.nombre} (${m.creditos} créditos)`;
+          lista.appendChild(li);
+        });
+      });
+  </script>
+</body>
+</html>
