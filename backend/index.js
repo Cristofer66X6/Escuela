@@ -7,7 +7,6 @@ app.use(cors());
 app.use(express.json());
 
 /* ===================== AUTENTICACIÓN ===================== */
-
 // Registro
 app.post("/register", async (req, res) => {
   const { nombre, carrera, numero_control, periodo_inicio, semestre, contrasena } = req.body;
@@ -24,7 +23,6 @@ app.post("/register", async (req, res) => {
     res.status(400).json({ error: "No se pudo registrar el usuario" });
   }
 });
-
 // Login
 app.post("/login", async (req, res) => {
   const { numero_control, contrasena } = req.body;
@@ -44,7 +42,6 @@ app.post("/login", async (req, res) => {
     res.status(500).json({ error: "Error en el servidor" });
   }
 });
-
 // Actualizar usuario
 app.put("/usuario/:id", async (req, res) => {
   const { id } = req.params;
@@ -64,7 +61,6 @@ app.put("/usuario/:id", async (req, res) => {
     res.status(400).json({ error: "No se pudo actualizar el usuario" });
   }
 });
-
 // Eliminar usuario
 app.delete("/usuario/:id", async (req, res) => {
   try {
@@ -75,7 +71,6 @@ app.delete("/usuario/:id", async (req, res) => {
     res.status(400).json({ error: "No se pudo eliminar el usuario" });
   }
 });
-
 // Listar estudiantes
 app.get("/estudiantes", async (req, res) => {
   try {
@@ -86,9 +81,7 @@ app.get("/estudiantes", async (req, res) => {
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });
-
 /* ===================== MATERIAS ===================== */
-
 // Crear materia
 app.post("/materias", async (req, res) => {
   const { nombre, creditos } = req.body;
@@ -103,7 +96,6 @@ app.post("/materias", async (req, res) => {
     res.status(400).json({ error: "No se pudo crear la materia" });
   }
 });
-
 // Ver todas las materias
 app.get("/materias", async (req, res) => {
   try {
@@ -114,9 +106,7 @@ app.get("/materias", async (req, res) => {
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });
-
 /* ===================== AVANCE (Estudiantes ↔ Materias) ===================== */
-
 // Inscribir estudiante en una materia
 app.post("/avance", async (req, res) => {
   const { id_estudiante, id_materia } = req.body;
@@ -131,7 +121,6 @@ app.post("/avance", async (req, res) => {
     res.status(400).json({ error: "Error al inscribir materia" });
   }
 });
-
 // Ver avance de un estudiante
 app.get("/avance/:id_estudiante", async (req, res) => {
   const { id_estudiante } = req.params;
@@ -149,7 +138,6 @@ app.get("/avance/:id_estudiante", async (req, res) => {
     res.status(400).json({ error: "Error al obtener avance" });
   }
 });
-
 // Actualizar estado de una materia en el avance (Aprobada / Reprobada / En curso)
 app.put("/avance/:id", async (req, res) => {
   const { id } = req.params;
@@ -165,9 +153,7 @@ app.put("/avance/:id", async (req, res) => {
     res.status(400).json({ error: "Error al actualizar avance" });
   }
 });
-
 /* ===================== INICIO SERVIDOR ===================== */
-
 app.listen(3000, () => {
   console.log("✅ Servidor corriendo en http://localhost:3000");
 });

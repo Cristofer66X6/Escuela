@@ -1,5 +1,4 @@
 const API = "http://localhost:3000";
-
 // LOGIN
 document.getElementById("form-login").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -20,7 +19,6 @@ document.getElementById("form-login").addEventListener("submit", async (e) => {
     window.location.href = "panel.html";
   }
 });
-
 // REGISTRO
 document.getElementById("form-register").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -40,7 +38,6 @@ document.getElementById("form-register").addEventListener("submit", async (e) =>
   const data = await res.json();
   alert("Usuario registrado: " + JSON.stringify(data));
 });
-
 // ACTUALIZAR
 document.getElementById("form-update").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -58,7 +55,6 @@ document.getElementById("form-update").addEventListener("submit", async (e) => {
   const data = await res.json();
   alert("Usuario actualizado: " + JSON.stringify(data));
 });
-
 // ELIMINAR
 document.getElementById("form-delete").addEventListener("submit", async (e) => {
   e.preventDefault();
