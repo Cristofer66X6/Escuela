@@ -42,35 +42,50 @@ app.post("/login", async (req, res) => {
     res.status(500).json({ error: "Error en el servidor" });
   }
 });
-// Actualizar usuario
-app.put("/usuario/:id", async (req, res) => {
-  const { id } = req.params;
+// Actualizar usuario por numero_control
+app.put("/usuario/:numero_control", async (req, res) => {
+  const { numero_control } = req.params;
   const { nombre, carrera, contrasena } = req.body;
 
   try {
     const result = await pool.query(
       `UPDATE estudiantes
        SET nombre=$1, carrera=$2, contrasena=$3
-       WHERE id=$4
+       WHERE numero_control=$4
        RETURNING *`,
-      [nombre, carrera, contrasena, id]
+      [nombre, carrera, contrasena, numero_control]
     );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
     res.json(result.rows[0]);
   } catch (err) {
     console.error("Error al actualizar usuario:", err);
     res.status(400).json({ error: "No se pudo actualizar el usuario" });
   }
 });
-// Eliminar usuario
-app.delete("/usuario/:id", async (req, res) => {
+
+// Eliminar usuario por numero_control
+app.delete("/usuario/:numero_control", async (req, res) => {
   try {
-    await pool.query("DELETE FROM estudiantes WHERE id=$1", [req.params.id]);
+    const result = await pool.query(
+      "DELETE FROM estudiantes WHERE numero_control=$1 RETURNING *",
+      [req.params.numero_control]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
     res.json({ message: "Usuario eliminado" });
   } catch (err) {
     console.error("Error al eliminar usuario:", err);
     res.status(400).json({ error: "No se pudo eliminar el usuario" });
   }
 });
+
 // Listar estudiantes
 app.get("/estudiantes", async (req, res) => {
   try {
