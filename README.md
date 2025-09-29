@@ -200,7 +200,7 @@ ________________________________________________________________________________
 
 # Donde se ve que esta instalado nuestro framework?
 Se puede ver en nuestro package-lock.json
-![alt text](image.png)
+![alt text](./backend/imagenes/image.png)
 
 como lo ejecutamos?
 
@@ -230,12 +230,12 @@ const pool = new Pool({
 y exportamos con
 
 export default pool;
-![alt text](image-1.png)
+![alt text](./backend/imagenes/image-1.png)
 
 _______________________________________________________________________________________________________
 
 # Rutas usadas con Framework
-![alt text](image-2.png)
+![alt text](./backend/imagenes/image-2.png)
 app.post("/register", async (req, res) => {
   const { nombre, carrera, numero_control, periodo_inicio, semestre, contrasena } = req.body;
 
@@ -252,7 +252,7 @@ app.post("/register", async (req, res) => {
   }
 });
 
-![alt text](image-3.png)
+![alt text](./backend/imagenes/image-3.png)
 // Login
 app.post("/login", async (req, res) => {
   const { numero_control, contrasena } = req.body;
@@ -273,7 +273,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-![alt text](image-4.png)
+![alt text](./backend/imagenes/image-4.png)
 // Actualizar usuario
 app.put("/usuario/:id", async (req, res) => {
   const { id } = req.params;
@@ -295,7 +295,7 @@ app.put("/usuario/:id", async (req, res) => {
 });
 
 
-![alt text](image-5.png)
+![alt text](./backend/imagenes/image-5.png)
 // Eliminar usuario
 app.delete("/usuario/:id", async (req, res) => {
   try {
@@ -306,4 +306,4 @@ app.delete("/usuario/:id", async (req, res) => {
     res.status(400).json({ error: "No se pudo eliminar el usuario" });
   }
 });
-![alt text](image-6.png)
+![alt text](./backend/imagenes/image-6.png)
