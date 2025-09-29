@@ -1,6 +1,4 @@
 # Escuela
-Proyecto backend sobre mi escuela 
-
 # Base de datos en PgAdmin
 
  Tabla: estudiantes
