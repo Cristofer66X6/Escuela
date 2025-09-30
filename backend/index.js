@@ -2,6 +2,9 @@ import express from "express";
 import cors from "cors";
 import pool from "./db.js";
 import path from "path";
+import { saludar, obtenerFecha } from "./modulos/ejemplo.js";
+import dotenv from 'dotenv';
+dotenv.config();
 
 const app = express();
 app.use(express.static("public"));
@@ -230,7 +233,12 @@ app.put("/avance/:id", async (req, res) => {
     res.status(400).json({ error: "Error al actualizar avance" });
   }
 });
+app.get("/saludo/:nombre", (req, res) => { 
+  const { nombre } = req.params; 
+  res.json({ mensaje: saludar(nombre), fecha: obtenerFecha() }); 
+});
 /* ===================== INICIO SERVIDOR ===================== */
-app.listen(3000, () => {
-  console.log("✅ Servidor corriendo en http://localhost:3000");
+const PORT = process.env.PORT || 3000; // usa el del .env o 3000 por defecto
+app.listen(PORT, () => {
+  console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
 });
