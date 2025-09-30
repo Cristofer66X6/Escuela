@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel Directivo</title>
+</head>
+<body>
+  <h1>Registrar datos académicos del estudiante</h1>
+
+  <form id="form-detalles">
+    <input type="text" id="numero_control" placeholder="Número de control" required><br>
+    <input type="text" id="nombre" placeholder="Nombre" required><br>
+    <input type="text" id="carrera" placeholder="Carrera" required><br>
+    <input type="number" id="semestre" placeholder="Semestre" required><br>
+    <input type="text" id="periodo" placeholder="Periodo inicio (ej. Ago-Dic)" required><br>
+    <input type="text" id="materias" placeholder="Materias cursadas"><br>
+    <input type="text" id="especialidad" placeholder="Especialidad"><br>
+    <input type="number" id="creditos" placeholder="Créditos"><br>
+    <button type="submit">Guardar</button>
+  </form>
+
+  <script>
+    const API = "http://localhost:3000";
+
+fetch(`${API}/estudiantes`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    numero_control,
+    nombre,
+    carrera,
+    semestre,
+    periodo_inicio,
+    materias_cursadas,
+    especialidad,
+    creditos
+  })
+})
+  .then(res => res.json())
+  .then(data => {
+    alert("Guardado con éxito");
+    console.log(data);
+  })
+  .catch(err => console.error("Error:", err));
+
+  </script>
+</body>
+</html>

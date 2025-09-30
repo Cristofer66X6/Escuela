@@ -16,7 +16,7 @@ document.getElementById("form-login").addEventListener("submit", async (e) => {
 
   if (data.user) {
     // Redirigir al panel de estudiantes
-    window.location.href = "panel.html";
+    window.location.href = "estudiantes.html";
   }
 });
 // REGISTRO

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión Escolar - Login</title>
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Gestión Escolar</h1>
+
+    <!-- LOGIN -->
+    <form id="form-login" class="active">
+      <input type="text" id="login-numero" placeholder="Número de control" required>
+      <input type="password" id="login-pass" placeholder="Contraseña" required>
+      <button type="submit">Ingresar</button>
+    </form>
+
+    <!-- REGISTRO -->
+    <form id="form-register">
+      <input type="text" id="reg-nombre" placeholder="Nombre" required>
+      <input type="text" id="reg-carrera" placeholder="Carrera" required>
+      <input type="text" id="reg-numero" placeholder="Número de control" required>
+      <input type="text" id="reg-periodo" placeholder="Periodo inicio">
+      <input type="number" id="reg-semestre" placeholder="Semestre">
+      <input type="password" id="reg-pass" placeholder="Contraseña" required>
+      <button type="submit">Registrarse</button>
+    </form>
+
+    
+    <!-- LINKS -->
+    <div class="links">
+      <a href="#" onclick="mostrarForm('form-login')">Iniciar Sesión</a>
+      <a href="#" onclick="mostrarForm('form-register')">Registrarse</a>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    function mostrarForm(id) {
+      document.querySelectorAll("form").forEach(f => f.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+    }
+  </script>
+</body>
+</html>

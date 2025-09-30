@@ -1,8 +1,10 @@
 import express from "express";
 import cors from "cors";
 import pool from "./db.js";
+import path from "path";
 
 const app = express();
+app.use(express.static("public"));
 app.use(cors());
 app.use(express.json());
 
@@ -66,6 +68,66 @@ app.put("/usuario/:numero_control", async (req, res) => {
     res.status(400).json({ error: "No se pudo actualizar el usuario" });
   }
 });
+app.get("/estudiante/:numero_control", async (req, res) => {
+  const { numero_control } = req.params;
+  try {
+    const result = await pool.query(
+      "SELECT * FROM estudiantes_detalles WHERE numero_control = $1",
+      [numero_control]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "No se encontraron datos académicos" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al obtener datos del estudiante" });
+  }
+});
+// Crear o registrar datos académicos del estudiante
+app.post("/estudiantes", async (req, res) => {
+  const { numero_control, nombre, carrera, semestre, periodo_inicio, materias_cursadas, especialidad, creditos } = req.body;
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO estudiantes_detalles 
+       (numero_control, nombre, carrera, semestre, periodo_inicio, materias_cursadas, especialidad, creditos) 
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+      [numero_control, nombre, carrera, semestre, periodo_inicio, materias_cursadas, especialidad, creditos]
+    );
+
+    res.json({ message: "Datos del estudiante registrados", estudiante: result.rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al registrar datos académicos" });
+  }
+});
+// Actualizar datos académicos de un estudiante por numero_control
+app.put("/estudiantes/:numero_control", async (req, res) => {
+  const { numero_control } = req.params;
+  const { nombre, carrera, semestre, periodo_inicio, materias_cursadas, especialidad, creditos } = req.body;
+
+  try {
+    const result = await pool.query(
+      `UPDATE estudiantes_detalles 
+       SET nombre=$1, carrera=$2, semestre=$3, periodo_inicio=$4, materias_cursadas=$5, especialidad=$6, creditos=$7
+       WHERE numero_control=$8 RETURNING *`,
+      [nombre, carrera, semestre, periodo_inicio, materias_cursadas, especialidad, creditos, numero_control]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Estudiante no encontrado" });
+    }
+
+    res.json({ message: "Datos actualizados", estudiante: result.rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al actualizar datos" });
+  }
+});
+
 
 // Eliminar usuario por numero_control
 app.delete("/usuario/:numero_control", async (req, res) => {

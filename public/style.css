@@ -1,0 +1,21 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-image: url('./tec.jpg');
+    background-size: cover;
+    background-position: center;
+    repeat: no-repeat;
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+form {
+      display: none;
+      margin-top: 1rem;
+    }
+
+    form.active {
+      display: block;
+    }

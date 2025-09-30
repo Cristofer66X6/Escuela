@@ -55,8 +55,6 @@ CORS → para permitir solicitudes desde diferentes orígenes.
 
 Se ejecuta el servidor con Express.
 
-El cliente (por ejemplo Postman o un frontend) hace solicitudes HTTP a las rutas disponibles.
-
 El servidor procesa los datos y consulta la base de datos mediante pool.query().
 
 La respuesta se devuelve en formato JSON.
