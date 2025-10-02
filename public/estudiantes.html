@@ -14,49 +14,24 @@
   <p><strong>Especialidad:</strong> <span id="especialidad"></span></p>
   <p><strong>Créditos:</strong> <span id="creditos"></span></p>
 
-  
   <!-- ACTUALIZAR -->
-    <form id="form-update">
-      <input type="number" id="upd-id" placeholder="ID usuario" required>
-      <input type="text" id="upd-nombre" placeholder="Nuevo nombre">
-      <input type="text" id="upd-carrera" placeholder="Nueva carrera">
-      <input type="password" id="upd-pass" placeholder="Nueva contraseña">
-      <button type="submit">Actualizar Usuario</button>
-    </form>
-    <!-- ELIMINAR -->
-    <form id="form-delete">
-      <input type="number" id="del-id" placeholder="ID usuario" required>
-      <button type="submit">Eliminar Usuario</button>
-    </form>
-    <div class="links">
-      <a href="#" onclick="mostrarForm('form-update')">Actualizar Usuario</a>
-      <a href="#" onclick="mostrarForm('form-delete')">Eliminar Usuario</a>
-    </div>
+  <form id="form-update">
+    <input type="text" id="upd-nombre" placeholder="Nuevo nombre">
+    <input type="text" id="upd-carrera" placeholder="Nueva carrera">
+    <input type="password" id="upd-pass" placeholder="Nueva contraseña">
+    <button type="submit">Actualizar Usuario</button>
+  </form>
 
-  <script>
-    function mostrarForm(id) {
-      document.querySelectorAll("form").forEach(f => f.classList.remove("active"));
-      document.getElementById(id).classList.add("active");
-    }
-    // Supongamos que guardaste el numero_control en localStorage cuando el alumno hizo login
-    const numero_control = localStorage.getItem("numero_control");
+  <!-- ELIMINAR -->
+  <form id="form-delete">
+    <button type="submit">Eliminar Usuario</button>
+  </form>
 
-    fetch(`/estudiante/${numero_control}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.error) {
-          alert(data.error);
-        } else {
-          document.getElementById("nombre").textContent = data.nombre;
-          document.getElementById("carrera").textContent = data.carrera;
-          document.getElementById("semestre").textContent = data.semestre;
-          document.getElementById("periodo").textContent = data.periodo_inicio;
-          document.getElementById("materias").textContent = data.materias_cursadas;
-          document.getElementById("especialidad").textContent = data.especialidad ?? "N/A";
-          document.getElementById("creditos").textContent = data.creditos;
-        }
-      })
-      .catch(err => console.error(err));
-  </script>
+  <div class="links">
+    <a href="#" onclick="mostrarForm('form-update')">Actualizar Usuario</a>
+    <a href="#" onclick="mostrarForm('form-delete')">Eliminar Usuario</a>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>

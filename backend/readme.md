@@ -71,3 +71,31 @@ Ahora que estamos en la carpeta donde tenemos index.js ejecutamos "node index.js
 -imagenes: Nuestras imagenes de readme principal
 -db.js: Conexion a la base de datos en nuestro caso es postgress
 -index.js: Archivo principal que contiene nuestras rutas 
+
+# Rutas de practicas U4
+
+# 1. Obtener estudiantes (GET)
+Permite ver todos los estudiantes o un estudiante específico.
+Verifica que se devuelvan los datos correctos y que se indique si no existe.
+
+# 2. Crear estudiante (POST)
+Permite registrar un nuevo estudiante.
+Verifica que el estudiante se agregue correctamente y que los datos queden guardados.
+
+# 3. Actualizar estudiante (PUT)
+Permite modificar los datos de un estudiante existente.
+Verifica que los cambios se reflejen y que se indique si el estudiante no existe.
+
+# 4. Eliminar estudiante (DELETE)
+Permite eliminar un estudiante.
+Verifica que el estudiante se elimine y que se indique si no existía.
+
+# Cabecera
+
+En esta práctica se agregó la cabecera personalizada X-App-Version a todas las respuestas del servidor.
+El propósito de esta cabecera es indicar la versión de la aplicación que se está ejecutando, lo cual resulta útil para identificar cambios o actualizaciones en el backend.
+
+El prefijo X- señala que se trata de una cabecera definida por el desarrollador y no una cabecera estándar de HTTP.
+De esta manera, cada vez que un cliente (como Postman o el navegador) recibe una respuesta, además del contenido en formato JSON también puede ver la información de la versión en los headers.
+
+En resumen, la cabecera X-App-Version me permite llevar un control de la versión del sistema y asegurarme de que el cliente sabe con qué versión de la API está trabajando.

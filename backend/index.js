@@ -1,15 +1,86 @@
 import express from "express";
 import cors from "cors";
-import pool from "./db.js";
 import path from "path";
 import { saludar, obtenerFecha } from "./modulos/ejemplo.js";
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 dotenv.config();
+import pool from "./db.js";
+import jwt from "jsonwebtoken";
+import rateLimit from "express-rate-limit";
+import fs from "fs";
+
+
+
 
 const app = express();
 app.use(express.static("public"));
 app.use(cors());
 app.use(express.json());
+const SECRET = process.env.JWT_SECRET;
+
+// Limiter global para una ruta específica
+const limiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minuto
+  max: 5, // máximo 5 solicitudes por IP
+  message: { error: "Has excedido el límite de peticiones. Intenta de nuevo más tarde." },
+  standardHeaders: true, // Devuelve info de límite en headers
+  legacyHeaders: false
+});
+// Función para registrar intentos fallidos
+const logIntentoFallido = (numero_control, ruta) => {
+  const fecha = new Date().toISOString();
+  const log = `${fecha} - Usuario: ${numero_control || "desconocido"} - Ruta: ${ruta}\n`;
+
+  const logPath = path.join(process.cwd(), "logs.txt"); // ✅ Solo Node.js
+
+  fs.appendFile(logPath, log, (err) => {
+    if (err) console.error("Error escribiendo en log:", err);
+  });
+};
+//Middlewae para Token
+const tokenMiddleware = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+
+  // Esperamos que venga como "Bearer <token>"
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ error: "Token requerido" });
+  }
+
+  jwt.verify(token, SECRET, (err, user) => {
+    if (err) return res.status(401).json({ error: "Token inválido o expirado" });
+
+    req.user = user; // guardamos info del token
+    next();
+  });
+};
+// Middleware para cabecera personalizada
+app.use((req, res, next) => {
+  res.setHeader("X-App-Author", "Cristofer Hizo esto");
+  next();
+});
+// Middleware para registrar todas las respuestas (Práctica 5)
+app.use((req, res, next) => {
+  // Guardamos hora inicial
+  const start = new Date().toISOString();
+
+  // Escuchamos cuando la respuesta termine
+  res.on("finish", () => {
+    const metodo = req.method;
+    const ruta = req.originalUrl;
+    const status = res.statusCode;
+
+    const log = `${start} - ${metodo} ${ruta} - ${status}\n`;
+    const logPath = path.join(process.cwd(), "logs_respuestas.txt");
+
+    fs.appendFile(logPath, log, (err) => {
+      if (err) console.error("Error escribiendo log de respuestas:", err);
+    });
+  });
+
+  next();
+});
 
 /* ===================== AUTENTICACIÓN ===================== */
 // Registro
@@ -22,7 +93,7 @@ app.post("/register", async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, nombre, numero_control`,
       [nombre, carrera, numero_control, periodo_inicio, semestre, contrasena]
     );
-    res.json(result.rows[0]);
+    res.status(200).json(result.rows[0]);
   } catch (err) {
     console.error("Error al registrar usuario:", err);
     res.status(400).json({ error: "No se pudo registrar el usuario" });
@@ -41,7 +112,16 @@ app.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Credenciales incorrectas" });
     }
 
-    res.json({ message: "Login exitoso", user: result.rows[0] });
+    const user = result.rows[0];
+
+    // Generar token válido por 1 hora
+    const token = jwt.sign(
+      { numero_control: user.numero_control, nombre: user.nombre },
+      SECRET,
+      { expiresIn: "1h" }
+    );
+
+    res.json({ message: "Login exitoso", token });
   } catch (err) {
     console.error("Error en login:", err);
     res.status(500).json({ error: "Error en el servidor" });
@@ -60,7 +140,6 @@ app.put("/usuario/:numero_control", async (req, res) => {
        RETURNING *`,
       [nombre, carrera, contrasena, numero_control]
     );
-
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
@@ -75,7 +154,7 @@ app.get("/estudiante/:numero_control", async (req, res) => {
   const { numero_control } = req.params;
   try {
     const result = await pool.query(
-      "SELECT * FROM estudiantes_detalles WHERE numero_control = $1",
+      "SELECT * FROM estudiantes WHERE numero_control = $1",
       [numero_control]
     );
 
@@ -110,14 +189,14 @@ app.post("/estudiantes", async (req, res) => {
 // Actualizar datos académicos de un estudiante por numero_control
 app.put("/estudiantes/:numero_control", async (req, res) => {
   const { numero_control } = req.params;
-  const { nombre, carrera, semestre, periodo_inicio, materias_cursadas, especialidad, creditos } = req.body;
+  const { nombre, carrera, semestre, periodo_inicio, contrasena } = req.body;
 
   try {
     const result = await pool.query(
-      `UPDATE estudiantes_detalles 
-       SET nombre=$1, carrera=$2, semestre=$3, periodo_inicio=$4, materias_cursadas=$5, especialidad=$6, creditos=$7
-       WHERE numero_control=$8 RETURNING *`,
-      [nombre, carrera, semestre, periodo_inicio, materias_cursadas, especialidad, creditos, numero_control]
+      `UPDATE estudiantes 
+       SET nombre=$1, carrera=$2, semestre=$3, periodo_inicio=$4, contrasena=$5
+       WHERE numero_control=$6 RETURNING *`,
+      [nombre, carrera, semestre, periodo_inicio, contrasena, numero_control] // ✅ CORRECTO
     );
 
     if (result.rows.length === 0) {
@@ -130,7 +209,6 @@ app.put("/estudiantes/:numero_control", async (req, res) => {
     res.status(500).json({ error: "Error al actualizar datos" });
   }
 });
-
 
 // Eliminar usuario por numero_control
 app.delete("/usuario/:numero_control", async (req, res) => {
@@ -233,10 +311,113 @@ app.put("/avance/:id", async (req, res) => {
     res.status(400).json({ error: "Error al actualizar avance" });
   }
 });
+
+//Middleware para manejar rutas no encontradas de practica 4
+const authMiddleware = async (req, res, next) => {
+  const { numero_control, contrasena } = req.headers;
+
+  if (!numero_control || !contrasena) {
+    logIntentoFallido(numero_control, req.originalUrl); // log aquí
+    return res.status(401).json({ error: "Credenciales requeridas" });
+  }
+
+  try {
+    const result = await pool.query(
+      "SELECT * FROM estudiantes WHERE numero_control=$1 AND contrasena=$2",
+      [numero_control, contrasena]
+    );
+    if (result.rows.length === 0) {
+      logIntentoFallido(numero_control, req.originalUrl); // log aquí también
+      return res.status(401).json({ error: "Credenciales inválidas" });
+    }
+    req.user = result.rows[0];
+    next();
+  } catch (err) {
+    console.error("Error en authMiddleware:", err);
+    res.status(500).json({ error: "Error interno en autenticación" });
+  }
+};
+
+
+//----------------------------------RUTAS DE PRACTICA DE LA UNIDAD 4 AGREGADAS-----------------------------------
 app.get("/saludo/:nombre", (req, res) => { 
   const { nombre } = req.params; 
   res.json({ mensaje: saludar(nombre), fecha: obtenerFecha() }); 
 });
+// Buscar materias con filtros opcionales
+app.get("/buscar-estudiantes", async (req, res) => {
+  const { nombre, carrera } = req.query; // aquí se reciben los parámetros de búsqueda
+
+  try {
+    let query = "SELECT * FROM estudiantes WHERE 1=1";
+    const values = [];
+    let counter = 1;
+
+    if (nombre) {
+      query += ` AND nombre ILIKE $${counter++}`;
+      values.push(`%${nombre}%`);
+    }
+    if (carrera) {
+      query += ` AND carrera = $${counter++}`;
+      values.push(carrera);
+    }
+
+    const result = await pool.query(query, values);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error en búsqueda:", err);
+    res.status(500).json({ error: "Error en el servidor" });
+  }
+});
+// Ruta básica de saludo
+app.get("/saludo", (req, res) => {
+  res.send("Hola Mundo");
+});
+// Ruta nueva
+app.get("/nueva", (req, res) => {
+  res.send("Bienvenido a la ruta nueva 🚀");
+});
+// Ruta antigua que redirige a la nueva
+app.get("/antigua", (req, res) => {
+  res.redirect("/nueva");
+});
+// Ruta pública (sin restricciones)
+app.get("/publica", limiter, (req, res) => {
+  res.json({ mensaje: "Ruta pública con limitación de peticiones ✅" });
+});
+
+// Ruta privada (requiere autenticación)
+app.get("/privada", authMiddleware, (req, res) => {
+  res.json({ 
+    mensaje: "Ruta privada: acceso permitido ✅", 
+    usuario: req.user 
+  });
+});
+
+// Ruta pública
+app.get("/publica", (req, res) => {
+  res.send("Ruta pública ✅");
+});
+app.get("/solo-admin", authMiddleware, (req, res) => {
+  if (req.user.carrera !== "Admin") {
+    return res.status(403).json({ error: "Acceso prohibido: solo administradores" });
+  }
+  res.json({ mensaje: "Bienvenido administrador ✅" });
+});
+
+
+/*
+// Ruta privada que requiere token
+app.get("/privada", tokenMiddleware, (req, res) => {
+  res.json({
+    mensaje: "Acceso permitido con token ✅",
+    usuario: req.user
+  });
+});
+*/
+
+
+
 /* ===================== INICIO SERVIDOR ===================== */
 const PORT = process.env.PORT || 3000; // usa el del .env o 3000 por defecto
 app.listen(PORT, () => {

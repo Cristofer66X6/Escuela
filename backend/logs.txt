@@ -1,0 +1,7 @@
+2025-10-02T02:41:47.142Z - Usuario: 1213421424 - Ruta: /privada
+2025-10-02T04:52:01.192Z - Usuario: desconocido - Ruta: /privada
+2025-10-02T04:54:05.337Z - Usuario: desconocido - Ruta: /solo-admin
+2025-10-02T04:54:36.454Z - Usuario: desconocido - Ruta: /solo-admin
+2025-10-02T04:55:30.854Z - Usuario: 32142 - Ruta: /solo-admin
+2025-10-02T04:55:53.406Z - Usuario: 32142 - Ruta: /solo-admin
+2025-10-02T05:00:22.815Z - Usuario: 123432425 - Ruta: /privada
