@@ -148,3 +148,31 @@ document.getElementById("form-delete")?.addEventListener("submit", async (e) => 
     alert("❌ Error conectando con el servidor");
   }
 });
+// -------------------- PAGO --------------------
+document.getElementById("form-pago")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const numero_control = localStorage.getItem("numero_control");
+  const tipo = document.getElementById("tipo").value;
+  const monto = document.getElementById("monto").value;
+
+  try {
+    const res = await fetch(`${API}/crear-pago`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ numero_control, tipo, monto })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      // Redirigir al checkout de Stripe
+      window.location.href = data.url;
+    } else {
+      alert("❌ " + (data.error || "Error al crear el pago"));
+    }
+  } catch (err) {
+    console.error(err);
+    alert("❌ Error conectando con el servidor");
+  }
+});
+

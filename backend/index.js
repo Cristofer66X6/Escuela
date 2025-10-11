@@ -416,7 +416,103 @@ app.get("/privada", tokenMiddleware, (req, res) => {
 });
 */
 
+/* ===================== PAGOS DE MATERIAS E INSCRIPCIONES ===================== */
+app.post("/pago", async (req, res) => {
+  const { numero_control, tipo_pago, descripcion, monto } = req.body;
+  const ambiente = process.env.PAGO_AMBIENTE;
 
+  try {
+    // 1️⃣ Validar los datos
+    if (!numero_control || !tipo_pago || !monto) {
+      return res.status(400).json({ error: "Faltan datos: numero_control, tipo_pago o monto."});
+    }
+
+    // 2️⃣ Según el ambiente, se ejecuta una lógica distinta
+    let resultado;
+
+    switch (ambiente) {
+      case "productivo":
+        // Registrar pago real en la base de datos
+        const result = await pool.query(
+          `INSERT INTO pagos (numero_control, tipo_pago, descripcion, monto, ambiente)
+           VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+          [numero_control, tipo_pago, descripcion, monto, ambiente]
+        );
+
+        // Registrar evidencia en un archivo
+        const logPago = `💳 [PRODUCTIVO] ${new Date().toISOString()} | Usuario: ${numero_control} | Tipo: ${tipo_pago} | Monto: $${monto} | Desc: ${descripcion}\n`;
+        fs.appendFileSync(path.join(process.cwd(), "pagos_productivo.log"), logPago);
+
+        resultado = {
+          mensaje: "Pago realizado correctamente ✅",
+          ambiente,
+          pago: result.rows[0]
+        };
+        break;
+
+      case "ambiental":
+        // No guarda nada, solo simula
+        resultado = {
+          mensaje: "Pago ambiental simulado (no se registró en la base de datos) 🌿",
+          ambiente,
+          detalles: { numero_control, tipo_pago, monto, descripcion }
+        };
+        break;
+
+      case "sandbox":
+        // Genera datos falsos para pruebas
+        resultado = {
+          mensaje: "Pago de prueba (sandbox) 🧪",
+          ambiente,
+          datos_ejemplo: {
+            id_pago: Math.floor(Math.random() * 10000),
+            numero_control,
+            tipo_pago,
+            descripcion,
+            monto,
+            fecha: new Date().toISOString()
+          }
+        };
+        break;
+
+      default:
+        return res.status(400).json({ error: "Ambiente de pago no configurado correctamente" });
+    }
+
+    res.status(200).json(resultado);
+
+  } catch (err) {
+    console.error("Error al procesar pago:", err);
+    res.status(500).json({ error: "Error interno al procesar pago" });
+  }
+});
+app.post("/crear-pago", async (req, res) => {
+  const { numero_control, tipo, monto } = req.body;
+
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      mode: "payment",
+      line_items: [{
+        price_data: {
+          currency: "mxn",
+          product_data: {
+            name: tipo === "inscripcion" ? "Pago de inscripción" : "Pago de materias",
+          },
+          unit_amount: monto * 100, // centavos
+        },
+        quantity: 1,
+      }],
+      success_url: "http://localhost:5500/success.html",
+      cancel_url: "http://localhost:5500/cancel.html",
+    });
+
+    res.json({ url: session.url });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error creando el pago" });
+  }
+});
 
 /* ===================== INICIO SERVIDOR ===================== */
 const PORT = process.env.PORT || 3000; // usa el del .env o 3000 por defecto

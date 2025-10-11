@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal del Estudiante</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f6f8fb;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background: #004aad;
+      color: white;
+      padding: 15px;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 30px auto;
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    h2, h3 {
+      color: #004aad;
+    }
+
+    .info {
+      margin-bottom: 25px;
+      line-height: 1.8;
+    }
+
+    form {
+      margin-top: 15px;
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      margin-top: 5px;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background-color: #004aad;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #003380;
+    }
+
+    .logout {
+      background-color: #d11a2a;
+    }
+
+    .logout:hover {
+      background-color: #a60f1c;
+    }
+
+    .divider {
+      height: 2px;
+      background: #eee;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎓 Portal del Estudiante</h1>
+  </header>
+
+  <div class="container">
+    <h2>Datos del Estudiante</h2>
+
+    <div class="info">
+      <p><strong>Nombre:</strong> <span id="nombre">Cargando...</span></p>
+      <p><strong>Carrera:</strong> <span id="carrera">Cargando...</span></p>
+      <p><strong>Semestre:</strong> <span id="semestre">Cargando...</span></p>
+      <p><strong>Periodo de Inicio:</strong> <span id="periodo">Cargando...</span></p>
+    </div>
+
+    <div class="divider"></div>
+
+    <h3>💳 Realizar Pago</h3>
+    <form id="form-pago">
+      <label for="tipo">Tipo de pago:</label>
+      <select id="tipo">
+        <option value="inscripcion">Inscripción</option>
+        <option value="materias">Materias</option>
+      </select>
+
+      <label for="monto">Monto a pagar (MXN):</label>
+      <input type="number" id="monto" placeholder="Ej. 1200" required>
+
+      <button type="submit">Pagar ahora</button>
+    </form>
+
+    <div class="divider"></div>
+
+    <button class="logout" onclick="cerrarSesion()">Cerrar sesión</button>
+  </div>
+
+  <script>
+    const API = "http://localhost:3000";
+
+    // -------------------- CARGAR DATOS --------------------
+    async function cargarDatosEstudiante() {
+      const numero_control = localStorage.getItem("numero_control");
+      if (!numero_control) {
+        window.location.href = "index.html";
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/estudiante/${numero_control}`);
+        const data = await res.json();
+
+        if (data.error) {
+          alert("❌ " + data.error);
+          window.location.href = "index.html";
+          return;
+        }
+
+        document.getElementById("nombre").textContent = data.nombre;
+        document.getElementById("carrera").textContent = data.carrera;
+        document.getElementById("semestre").textContent = data.semestre;
+        document.getElementById("periodo").textContent = data.periodo_inicio;
+      } catch (err) {
+        console.error(err);
+        alert("❌ Error cargando datos del estudiante");
+      }
+    }
+
+    // -------------------- PAGO --------------------
+    document.getElementById("form-pago")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const numero_control = localStorage.getItem("numero_control");
+      const tipo = document.getElementById("tipo").value;
+      const monto = document.getElementById("monto").value;
+
+      try {
+        const res = await fetch(`${API}/crear-pago`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ numero_control, tipo, monto })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          // Redirige al portal de pago (Stripe)
+          window.location.href = data.url;
+        } else {
+          alert("❌ " + (data.error || "Error al crear el pago"));
+        }
+      } catch (err) {
+        console.error(err);
+        alert("❌ Error conectando con el servidor");
+      }
+    });
+
+    // -------------------- CERRAR SESIÓN --------------------
+    function cerrarSesion() {
+      localStorage.clear();
+      window.location.href = "index.html";
+    }
+
+    // Cargar datos al iniciar
+    cargarDatosEstudiante();
+  </script>
+</body>
+</html>
