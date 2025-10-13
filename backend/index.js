@@ -1,13 +1,29 @@
 import express from "express";
 import cors from "cors";
 import path from "path";
-import { saludar, obtenerFecha } from "./modulos/ejemplo.js";
 import dotenv from "dotenv";
-dotenv.config();
+import { saludar, obtenerFecha } from "./modulos/ejemplo.js";
+
+// 1️⃣ Detectar el ambiente que quieres usar
+//    (puedes pasar el nombre al arrancar: node index.js productivo)
+const envArg = process.argv[2]; // lee el argumento (productivo, ambiental o sandbox)
+const envName = envArg || process.env.NODE_ENV || "sandbox"; // por defecto usa "sandbox"
+
+// 2️⃣ Cargar el archivo .env correspondiente
+dotenv.config({ path: path.resolve(process.cwd(), `.env.${envName}`) });
+
+// 3️⃣ Mostrar en consola para verificar qué se cargó
+console.log("🌎 Ambiente cargado:", envName);
+console.log("📁 Archivo .env usado:", `.env.${envName}`);
+console.log("⚙️  PAGO_AMBIENTE =", process.env.PAGO_AMBIENTE);
+console.log("🗄️  DATABASE_URL =", process.env.DATABASE_URL ? process.env.DATABASE_URL.split("@")[1] : "No definida");
+
+
 import pool from "./db.js";
 import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
 import fs from "fs";
+
 
 
 
@@ -17,6 +33,8 @@ app.use(express.static("public"));
 app.use(cors());
 app.use(express.json());
 const SECRET = process.env.JWT_SECRET;
+
+
 
 // Limiter global para una ruta específica
 const limiter = rateLimit({

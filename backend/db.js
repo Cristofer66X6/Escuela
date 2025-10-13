@@ -1,6 +1,12 @@
 import pkg from 'pg';
 import dotenv from 'dotenv';
-dotenv.config();
+import path from 'path';  
+
+const envArg = process.argv[2];
+const envName = envArg || process.env.NODE_ENV || "sandbox";
+
+// cargar variables
+dotenv.config({ path: path.resolve(process.cwd(), `.env.${envName}`) });
 
 
 
@@ -18,8 +24,7 @@ const pool = new Pool({
   host: process.env.DB_HOST,
   database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD, // ✅ siempre string
-  port: process.env.DB_PORT,
+  port: parseInt(process.env.DB_PORT),
 });
 
-dotenv.config();
 export default pool;
