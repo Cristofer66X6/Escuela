@@ -83,3 +83,15 @@ npx → es una herramienta de Node.js que te permite ejecutar paquetes de npm si
 -index.html: login de nuestra pagina web
 -estilos.css: estilos de login
 -styles.css: estilos de pagina logeada
+
+# Para ver si el JWT se genero correctamente en el rol usa
+localStorage.getItem("token");
+
+
+# Para cambiar de ambiente solo descomenta el db.js y el index.js ademas ejecuta entornos como
+node index.js produccion
+sandbox
+etc
+
+
+

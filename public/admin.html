@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Panel de Administración</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+</head>
+<body>
+
+  <nav class="sidebar" id="sidebar">
+    <button class="close-btn" onclick="toggleMenu()">✖</button>
+    <ul>
+      <li><a href="#"><i class="fa-solid fa-users"></i>  Gestionar Estudiantes</a></li>
+      <li><a href="#"><i class="fa-solid fa-chalkboard-teacher"></i>  Profesores</a></li>
+      <li><a href="#"><i class="fa-solid fa-book"></i>  Materias</a></li>
+      <li><a href="#"><i class="fa-solid fa-gears"></i>  Servicios Escolares</a></li>
+      <li><a href="#"><i class="fa-solid fa-chart-line"></i>  Reportes</a></li>
+    </ul>
+  </nav>
+
+ 
+  <button class="menu-btn" onclick="toggleMenu()">☰</button>
+  <div class="main-container">
+
+    <div class="card">
+      <h1>👑 Bienvenido, <span id="admin-nombre"></span></h1>
+      <p class="subtext">Panel de control del administrador del sistema</p>
+    </div>
+
+  
+    <div class="card">
+      <h2><i class="fa-solid fa-users-gear"></i> Gestión de Usuarios</h2>
+      <div class="info">
+        <button onclick="mostrarForm('form-add')">➕ Agregar Usuario</button>
+        <button onclick="mostrarForm('form-update')">✏️ Actualizar Usuario</button>
+        <button onclick="mostrarForm('form-delete')">🗑️ Eliminar Usuario</button>
+      </div>
+    </div>
+
+   
+    <div class="card form-card oculto" id="form-add">
+      <h2>Agregar Nuevo Usuario</h2>
+      <form id="form-agregar">
+        <input type="text" placeholder="Nombre" id="add-nombre" required>
+        <input type="text" placeholder="Carrera" id="add-carrera" required>
+        <input type="text" placeholder="Número de control" id="add-numero" required>
+        <input type="password" placeholder="Contraseña" id="add-pass" required>
+        <select id="add-rol">
+          <option value="user" selected>Usuario</option>
+          <option value="admin">Administrador</option>
+        </select>
+        <button type="submit">Registrar</button>
+      </form>
+    </div>
+
+   
+    <div class="card form-card oculto" id="form-update">
+      <h2>Actualizar Usuario</h2>
+      <form id="form-actualizar">
+        <input type="text" placeholder="Número de control" id="upd-numero" required>
+        <input type="text" placeholder="Nuevo nombre" id="upd-nombre">
+        <input type="text" placeholder="Nueva carrera" id="upd-carrera">
+        <input type="password" placeholder="Nueva contraseña" id="upd-pass">
+        <button type="submit">Actualizar</button>
+      </form>
+    </div>
+
+   
+    <div class="card form-card oculto" id="form-delete">
+      <h2>Eliminar Usuario</h2>
+      <p class="alerta">⚠️ Esta acción no se puede deshacer</p>
+      <form id="form-eliminar">
+        <input type="text" placeholder="Número de control" id="del-numero" required>
+        <button type="submit" class="btn-danger">Eliminar Usuario</button>
+      </form>
+    </div>
+
+   
+    <div class="card">
+      <h2><i class="fa-solid fa-database"></i> Información del Sistema</h2>
+      <p><strong>Usuarios totales:</strong> <span id="total-usuarios">--</span></p>
+      <p><strong>Materias registradas:</strong> <span id="total-materias">--</span></p>
+      <p><strong>Último acceso:</strong> <span id="ultimo-acceso"></span></p>
+    </div>
+  </div>
+  <script>
+    // Mostrar y ocultar formularios
+    function mostrarForm(id) {
+      document.querySelectorAll(".form-card").forEach(f => f.classList.add("oculto"));
+      document.getElementById(id).classList.remove("oculto");
+      document.getElementById(id).scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    // Alternar menú lateral
+    function toggleMenu() {
+      document.getElementById("sidebar").classList.toggle("activo");
+    }
+
+    // Mostrar nombre del admin
+    document.addEventListener("DOMContentLoaded", () => {
+      const nombre = localStorage.getItem("nombre") || "Administrador";
+      document.getElementById("admin-nombre").textContent = nombre;
+      document.getElementById("ultimo-acceso").textContent = new Date().toLocaleString();
+    });
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>

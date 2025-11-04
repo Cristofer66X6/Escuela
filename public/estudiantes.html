@@ -4,33 +4,115 @@
   <meta charset="UTF-8" />
   <title>Panel del Estudiante</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 </head>
 <body>
-  <h1>Bienvenido, <span id="nombre"></span></h1>
-  <p><strong>Carrera:</strong> <span id="carrera"></span></p>
-  <p><strong>Semestre:</strong> <span id="semestre"></span></p>
-  <p><strong>Periodo de inicio:</strong> <span id="periodo"></span></p>
-  <p><strong>Materias cursadas:</strong> <span id="materias"></span></p>
-  <p><strong>Especialidad:</strong> <span id="especialidad"></span></p>
-  <p><strong>Créditos:</strong> <span id="creditos"></span></p>
+  <nav class="sidebar" id="sidebar">
+    <button class="close-btn" onclick="toggleMenu()">✖</button>
+    <ul>
+      <li><a href="#"><i class="fa-solid fa-user-tie"></i>  Estudiantes</a></li>
+      <li><a href="#"><i class="fa-solid fa-book"></i>  Materias</a></li>
+      <li><a href="#"><i class="fa-solid fa-screwdriver-wrench"></i> Servicios</a></li>
+      <li><a href="#"><i class="fa-solid fa-dumbbell"></i> Extraescolares</a></li>
+    </ul>
+  </nav>
 
-  <!-- ACTUALIZAR -->
-  <form id="form-update">
-    <input type="text" id="upd-nombre" placeholder="Nuevo nombre">
-    <input type="text" id="upd-carrera" placeholder="Nueva carrera">
-    <input type="password" id="upd-pass" placeholder="Nueva contraseña">
-    <button type="submit">Actualizar Usuario</button>
-  </form>
+  <!-- ====== BOTÓN HAMBURGUESA ====== -->
+  <button class="menu-btn" onclick="toggleMenu()">☰</button>
 
-  <!-- ELIMINAR -->
-  <form id="form-delete">
-    <button type="submit">Eliminar Usuario</button>
-  </form>
+  <!-- ====== CONTENEDOR PRINCIPAL ====== -->
+  <div class="main-wrapper">
 
-  <div class="links">
-    <a href="#" onclick="mostrarForm('form-update')">Actualizar Usuario</a>
-    <a href="#" onclick="mostrarForm('form-delete')">Eliminar Usuario</a>
+    <div class="main-container">
+      <!-- Tarjeta de Bienvenida -->
+      <div class="card">
+        <h1>Bienvenido, <span id="nombre"></span></h1>
+      </div>
+
+      <!--Tarjeta de Información -->
+      <div class="card">
+        <h2>Información del Estudiante</h2>
+        <div class="info">
+          <p><strong>Carrera:</strong> <span id="carrera"></span></p>
+          <p><strong>Semestre:</strong> <span id="semestre"></span></p>
+          <p><strong>Periodo de inicio:</strong> <span id="periodo"></span></p>
+          <p><strong>Materias cursadas:</strong> <span id="materias"></span></p>
+          <p><strong>Especialidad:</strong> <span id="especialidad"></span></p>
+          <p><strong>Créditos:</strong> <span id="creditos"></span></p>
+        </div>
+      </div>
+
+      <!--Tarjeta para Actualizar -->
+      <div class="card form-card oculto" id="form-update">
+        <h2>Actualizar Usuario</h2>
+        <form>
+          <input type="text" id="upd-nombre" placeholder="Nuevo nombre">
+          <input type="text" id="upd-carrera" placeholder="Nueva carrera">
+          <input type="password" id="upd-pass" placeholder="Nueva contraseña">
+          <button type="submit">Actualizar</button>
+        </form>
+      </div>
+
+      <!--Tarjeta para Eliminar -->
+      <div class="card form-card oculto" id="form-delete">
+        <h2>Eliminar Usuario</h2>
+        <p class="alerta">⚠️ Esta acción no se puede deshacer</p>
+        <form>
+          <button type="submit" class="btn-danger">Eliminar Usuario</button>
+        </form>
+      </div>
+
+      <!--Tarjeta de Acciones -->
+      <div class="card">
+        <h2>Acciones</h2>
+        <div class="links">
+          <button onclick="mostrarForm('form-update')">Actualizar Usuario</button>
+          <button onclick="mostrarForm('form-delete')">Eliminar Usuario</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== CONTENEDOR DE MATERIAS (al final) ====== -->
+    <div class="materias-container">
+      <!-- Formulario para agregar materias -->
+      <div class="card form-card oculto" id="form-materia">
+        <h2>Agregar Nueva Materia</h2>
+        <form id="materia-form">
+          <input type="text" id="materia-nombre" placeholder="Nombre de la materia" required>
+          <input type="number" id="materia-creditos" placeholder="Créditos" min="1" required>
+          <button type="submit">Agregar Materia</button>
+        </form>
+
+        <div id="materias-lista">
+          <h3>📚 Materias Registradas</h3>
+          <ul id="lista-materias"></ul>
+        </div>
+      </div>
+
+      <!-- Sección para mostrar materias -->
+      <div class="card">
+        <h2>Materias</h2>
+        <div class="links">
+          <button onclick="mostrarForm('form-materia')">Agregar Nueva Materia</button>
+        </div>
+      </div>
+    </div>
+
   </div>
+
+  <script>
+    // Mostrar y ocultar formularios
+    function mostrarForm(id) {
+      document.querySelectorAll(".form-card").forEach(f => f.classList.add("oculto"));
+      document.getElementById(id).classList.remove("oculto");
+      document.getElementById(id).scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    // Alternar menú lateral
+    function toggleMenu() {
+      document.getElementById("sidebar").classList.toggle("activo");
+    }
+  </script>
 
   <script src="app.js"></script>
 </body>

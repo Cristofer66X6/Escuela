@@ -1,21 +1,242 @@
+/* ====== Fondo y alineación general ====== */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-image: url('./tec.jpg');
-    background-size: cover;
-    background-position: center;
-    repeat: no-repeat;
-    height: 100vh;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-image: url('./imagenes/Azul.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 60px 0 40px 0;
+  overflow-x: hidden;
+}
+
+/* ====== BOTÓN HAMBURGUESA ====== */
+.menu-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  font-size: 26px;
+  background-color: rgba(52, 152, 219, 0.9);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  z-index: 1001;
+  transition: background 0.3s;
+}
+
+.menu-btn:hover {
+  background-color: rgba(33, 97, 140, 0.95);
+}
+
+/* ====== MENÚ LATERAL ====== */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -250px;
+  width: 220px;
+  height: 100%;
+  background-color: rgba(44, 62, 80, 0.97);
+  color: white;
+  padding-top: 60px;
+  transition: left 0.3s ease;
+  box-shadow: 3px 0 10px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+
+.sidebar.activo {
+  left: 0;
+}
+
+.sidebar .close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar li {
+  margin: 20px 0;
+}
+
+.sidebar a {
+  color: white;
+  text-decoration: none;
+  font-size: 17px;
+  padding: 10px 20px;
+  display: block;
+  transition: background 0.3s;
+}
+
+.sidebar a:hover {
+  background-color: rgba(26, 188, 156, 0.8);
+  border-radius: 6px;
+}
+
+/* ====== Contenedor principal ====== */
+.main-container {
+  width: 90%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  align-items: center;
+}
+
+/* ====== Tarjetas (cards) ====== */
+.card {
+  background-color: rgba(245, 245, 245, 0.95);
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+  padding: 25px 30px;
+  width: 100%;
+  text-align: center;
+  backdrop-filter: blur(3px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+}
+
+/* ====== Títulos ====== */
+h1, h2 {
+  color: #2c3e50;
+  margin-top: 0;
+}
+
+.info {
+  text-align: left;
+  margin-top: 10px;
+  color: #333;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ====== Formularios ====== */
+.form-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.form-card input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+  transition: border 0.3s;
+}
+
+.form-card input:focus {
+  border-color: #1abc9c;
+}
+
+/* ====== Botones ====== */
+button {
+  padding: 10px 15px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.3s;
+}
+
+button:hover {
+  background-color: #21618c;
+}
+
+.btn-danger {
+  background-color: #e74c3c;
+}
+
+.btn-danger:hover {
+  background-color: #c0392b;
+}
+
+/* ====== Sección de acciones ====== */
+.links {
+  display: flex;
+  justify-content: space-evenly;
+  margin-top: 10px;
+  gap: 15px;
+}
+
+.alerta {
+  color: #b03a2e;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+/* ====== Formularios ocultos ====== */
+.oculto {
+  display: none;
+}
+
+/* ====== Adaptación móvil ====== */
+@media (max-width: 500px) {
+  .card {
+    padding: 20px;
   }
 
-form {
-      display: none;
-      margin-top: 1rem;
-    }
+  .info {
+    font-size: 14px;
+  }
 
-    form.active {
-      display: block;
-    }
+  button {
+    width: 100%;
+  }
+
+  .links {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 180px;
+  }
+}
+/* ====== Contenedor de materias al final ====== */
+.materias-container {
+  width: 90%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+  margin-top: 40px; /* separa del contenido superior */
+}
+
+/* Tarjetas de materias (hereda estilo .card) */
+.materias-container .card {
+  width: 100%;
+}
+
+/* Para asegurar que siempre esté abajo del main-container */
+.main-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding-top: 60px;
+  padding-bottom: 40px;
+}

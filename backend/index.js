@@ -2,31 +2,52 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import dotenv from "dotenv";
+dotenv.config({ path: ".env" }); // ✅ Fuerza usar tu archivo .env real
 import { saludar, obtenerFecha } from "./modulos/ejemplo.js";
 
-// 1️⃣ Detectar el ambiente que quieres usar
-//    (puedes pasar el nombre al arrancar: node index.js productivo)
-const envArg = process.argv[2]; // lee el argumento (productivo, ambiental o sandbox)
-const envName = envArg || process.env.NODE_ENV || "sandbox"; // por defecto usa "sandbox"
+// Detectar el ambiente que quieres usar
+const envArg = process.argv[2];
+const envName = envArg || process.env.NODE_ENV || "sandbox";
 
-// 2️⃣ Cargar el archivo .env correspondiente
-dotenv.config({ path: path.resolve(process.cwd(), `.env.${envName}`) });
+// 🔐 Funciones para generar tokens
+const generateAccessToken = (user) => {
+  return jwt.sign(
+    { id: user.id, numero_control: user.numero_control, role: user.rol || "user" },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES }
+  );
+};
+const refreshTokens = [];
 
-// 3️⃣ Mostrar en consola para verificar qué se cargó
-console.log("🌎 Ambiente cargado:", envName);
-console.log("📁 Archivo .env usado:", `.env.${envName}`);
+const generateRefreshToken = (user) => {
+  return jwt.sign(
+    { id: user.id, numero_control: user.numero_control, role: user.rol || "user" },
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: process.env.JWT_REFRESH_EXPIRES }
+  );
+};
+
+
+
+// ❌ Esta parte causaba que se forzara el uso de `.env.sandbox`
+// dotenv.config({ path: path.resolve(process.cwd(), `.env.${envName}`) });
+
+// ✅ Ahora solo usamos el .env real (arriba)
+
+// Mostrar en consola para verificar qué se cargó
+console.log("🌎 Ambiente cargado: producción (usando .env real)");
+console.log("📁 Archivo .env usado: .env");
 console.log("⚙️  PAGO_AMBIENTE =", process.env.PAGO_AMBIENTE);
-console.log("🗄️  DATABASE_URL =", process.env.DATABASE_URL ? process.env.DATABASE_URL.split("@")[1] : "No definida");
-
+console.log(
+  "🗄️  DATABASE_URL =",
+  process.env.DATABASE_URL ? process.env.DATABASE_URL.split("@")[1] : "No definida"
+);
 
 import pool from "./db.js";
 import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
+
 import fs from "fs";
-
-
-
-
 
 const app = express();
 app.use(express.static("public"));
@@ -34,14 +55,12 @@ app.use(cors());
 app.use(express.json());
 const SECRET = process.env.JWT_SECRET;
 
-
-
 // Limiter global para una ruta específica
 const limiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minuto
-  max: 5, // máximo 5 solicitudes por IP
+  windowMs: 1 * 60 * 1000, 
+  max: 5, 
   message: { error: "Has excedido el límite de peticiones. Intenta de nuevo más tarde." },
-  standardHeaders: true, // Devuelve info de límite en headers
+  standardHeaders: true, 
   legacyHeaders: false
 });
 // Función para registrar intentos fallidos
@@ -68,7 +87,6 @@ const tokenMiddleware = (req, res, next) => {
 
   jwt.verify(token, SECRET, (err, user) => {
     if (err) return res.status(401).json({ error: "Token inválido o expirado" });
-
     req.user = user; // guardamos info del token
     next();
   });
@@ -82,6 +100,30 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   // Guardamos hora inicial
   const start = new Date().toISOString();
+
+// Middleware: verificar JWT
+const verifyJWT = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "Token requerido" });
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: "Token inválido o expirado" });
+    req.user = user;
+    next();
+  });
+};
+
+// Middleware: verificar roles
+const verifyRole = (roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ error: "Acceso denegado: no tienes permisos suficientes" });
+    }
+    next();
+  };
+};
+
 
   // Escuchamos cuando la respuesta termine
   res.on("finish", () => {
@@ -99,17 +141,40 @@ app.use((req, res, next) => {
 
   next();
 });
+// Middleware para verificar JWT
+const verifyToken = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "Token requerido" });
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: "Token inválido o expirado" });
+    req.user = user;
+    next();
+  });
+};
+
+// Middleware para verificar roles específicos
+const verifyRole = (roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.rol)) {
+      return res.status(403).json({ error: "Acceso denegado: no tienes permisos suficientes" });
+    }
+    next();
+  };
+};
+
 
 /* ===================== AUTENTICACIÓN ===================== */
 // Registro
 app.post("/register", async (req, res) => {
-  const { nombre, carrera, numero_control, periodo_inicio, semestre, contrasena } = req.body;
-
+  const { nombre, carrera, numero_control, periodo_inicio, semestre, contrasena, rol } = req.body;
   try {
     const result = await pool.query(
-      `INSERT INTO estudiantes (nombre, carrera, numero_control, periodo_inicio, semestre, contrasena)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, nombre, numero_control`,
-      [nombre, carrera, numero_control, periodo_inicio, semestre, contrasena]
+      `INSERT INTO estudiantes (nombre, carrera, numero_control, periodo_inicio, semestre, contrasena, rol)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id, nombre, numero_control, rol`,
+      [nombre, carrera, numero_control, periodo_inicio, semestre, contrasena, rol || "user"]
     );
     res.status(200).json(result.rows[0]);
   } catch (err) {
@@ -117,8 +182,14 @@ app.post("/register", async (req, res) => {
     res.status(400).json({ error: "No se pudo registrar el usuario" });
   }
 });
+
+app.get("/verify", verifyToken, (req, res) => {
+  res.json({ user: req.user });
+});
+
+
 // Login
-app.post("/login", async (req, res) => {
+/*app.post("/login", async (req, res) => {
   const { numero_control, contrasena } = req.body;
   try {
     const result = await pool.query(
@@ -132,12 +203,12 @@ app.post("/login", async (req, res) => {
 
     const user = result.rows[0];
 
-    // Generar token válido por 1 hora
-    const token = jwt.sign(
-      { numero_control: user.numero_control, nombre: user.nombre },
-      SECRET,
-      { expiresIn: "1h" }
-    );
+   const token = jwt.sign(
+  { numero_control: user.numero_control, contrasena: user.contrasena },
+  process.env.JWT_SECRET,
+  { expiresIn: process.env.JWT_EXPIRES_IN || "1h" }
+);
+
 
     res.json({ message: "Login exitoso", token });
   } catch (err) {
@@ -145,6 +216,7 @@ app.post("/login", async (req, res) => {
     res.status(500).json({ error: "Error en el servidor" });
   }
 });
+*/
 // Actualizar usuario por numero_control
 app.put("/usuario/:numero_control", async (req, res) => {
   const { numero_control } = req.params;
@@ -258,6 +330,7 @@ app.get("/estudiantes", async (req, res) => {
   }
 });
 /* ===================== MATERIAS ===================== */
+
 // Crear materia
 app.post("/materias", async (req, res) => {
   const { nombre, creditos } = req.body;
@@ -284,12 +357,19 @@ app.get("/materias", async (req, res) => {
 });
 /* ===================== AVANCE (Estudiantes ↔ Materias) ===================== */
 // Inscribir estudiante en una materia
+// POST /avance
 app.post("/avance", async (req, res) => {
-  const { id_estudiante, id_materia } = req.body;
+  const { numero_control, id_materia } = req.body;
+
+  if (!numero_control || !id_materia) {
+    return res.status(400).json({ error: "Faltan datos: numero_control o id_materia" });
+  }
+
   try {
     const result = await pool.query(
-      "INSERT INTO avance (id_estudiante, id_materia) VALUES ($1, $2) RETURNING *",
-      [id_estudiante, id_materia]
+      `INSERT INTO avance (numero_control, id_materia)
+       VALUES ($1, $2) RETURNING *`,
+      [numero_control, id_materia]
     );
     res.json(result.rows[0]);
   } catch (err) {
@@ -297,6 +377,38 @@ app.post("/avance", async (req, res) => {
     res.status(400).json({ error: "Error al inscribir materia" });
   }
 });
+// GET /avance/:numero_control
+app.get("/avance/:numero_control", async (req, res) => {
+  const { numero_control } = req.params;
+
+  try {
+    const result = await pool.query(
+      `SELECT 
+         e.numero_control, 
+         e.nombre, 
+         e.carrera, 
+         m.id AS id_materia, 
+         m.nombre AS materia, 
+         m.creditos, 
+         a.estado
+       FROM avance a
+       JOIN estudiantes e ON a.numero_control = e.numero_control
+       JOIN materias m ON a.id_materia = m.id
+       WHERE a.numero_control = $1`,
+      [numero_control]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "No se encontraron materias cursadas para este estudiante" });
+    }
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error al obtener avance:", err);
+    res.status(500).json({ error: "Error interno al obtener avance" });
+  }
+});
+/*
 // Ver avance de un estudiante
 app.get("/avance/:id_estudiante", async (req, res) => {
   const { id_estudiante } = req.params;
@@ -313,22 +425,31 @@ app.get("/avance/:id_estudiante", async (req, res) => {
     console.error("Error al obtener avance:", err);
     res.status(400).json({ error: "Error al obtener avance" });
   }
-});
+});*/
+
 // Actualizar estado de una materia en el avance (Aprobada / Reprobada / En curso)
+// PUT /avance/:id
 app.put("/avance/:id", async (req, res) => {
   const { id } = req.params;
   const { estado } = req.body;
+
   try {
     const result = await pool.query(
       "UPDATE avance SET estado=$1 WHERE id=$2 RETURNING *",
       [estado, id]
     );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Registro de avance no encontrado" });
+    }
+
     res.json(result.rows[0]);
   } catch (err) {
     console.error("Error al actualizar avance:", err);
     res.status(400).json({ error: "Error al actualizar avance" });
   }
 });
+
 
 //Middleware para manejar rutas no encontradas de practica 4
 const authMiddleware = async (req, res, next) => {
@@ -517,7 +638,7 @@ app.post("/crear-pago", async (req, res) => {
           product_data: {
             name: tipo === "inscripcion" ? "Pago de inscripción" : "Pago de materias",
           },
-          unit_amount: monto * 100, // centavos
+          unit_amount: monto * 100, 
         },
         quantity: 1,
       }],
@@ -532,8 +653,128 @@ app.post("/crear-pago", async (req, res) => {
   }
 });
 
+// Ruta de login completa
+app.post("/login", async (req, res) => {
+  const { numero_control, contrasena } = req.body;
+  try {
+    // Buscar usuario en la base de datos
+    const result = await pool.query(
+      "SELECT * FROM estudiantes WHERE numero_control=$1 AND contrasena=$2",
+      [numero_control, contrasena]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: "Credenciales incorrectas" });
+    }
+
+    const user = result.rows[0];
+
+    // Generar tokens
+    const accessToken = jwt.sign(
+      {
+        id: user.id,
+        numero_control: user.numero_control,
+        nombre: user.nombre,
+        rol: user.rol || "user",
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || "1h" }
+    );
+
+    const refreshToken = jwt.sign(
+      {
+        id: user.id,
+        numero_control: user.numero_control,
+        nombre: user.nombre,
+        rol: user.rol || "user",
+      },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d" }
+    );
+
+    refreshTokens.push(refreshToken);
+
+    
+    res.json({
+      message: "✅ Login exitoso",
+      accessToken,
+      refreshToken,
+    user: {
+      id: user.id,
+      numero_control: user.numero_control,
+      nombre: user.nombre,
+      rol: user.rol || "user",
+    },
+    redirectUrl: user.rol === "admin" ? "/admin.html" : "/estudiantes.html",
+  });
+    } catch (err) {
+    console.error("Error en login:", err);
+    res.status(500).json({ error: "Error en el servidor" });
+  }
+});
+
+
+
+
+// Ruta para renovar el access token
+app.post("/token", (req, res) => {
+  const { token } = req.body;
+
+  // Validar que venga el token
+  if (!token) {
+    return res.status(401).json({ error: "Refresh token requerido" });
+  }
+
+  // Verificar si el token está en la lista de válidos
+  if (!refreshTokens.includes(token)) {
+    return res.status(403).json({ error: "Token no válido o revocado" });
+  }
+
+  // Verificar y generar un nuevo access token
+  jwt.verify(token, process.env.JWT_REFRESH_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: "Refresh token inválido o expirado" });
+    }
+
+    const newAccessToken = jwt.sign(
+      {
+        numero_control: user.numero_control,
+        nombre: user.nombre,
+        rol: user.rol || "user"
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || "1h" }
+    );
+
+    res.json({ accessToken: newAccessToken });
+  });
+});
+// Ruta para verificar un access token
+app.get("/verify", (req, res) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1]; // Espera formato: "Bearer <token>"
+
+  if (!token) {
+    return res.status(401).json({ error: "Token requerido" });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: "Token inválido o expirado" });
+    }
+
+    res.json({
+      valid: true,
+      message: "Token válido ✅",
+      user
+    });
+  });
+});
+
+
 /* ===================== INICIO SERVIDOR ===================== */
-const PORT = process.env.PORT || 3000; // usa el del .env o 3000 por defecto
+const PORT = process.env.PORT || 3000; 
 app.listen(PORT, () => {
   console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
 });
+  
