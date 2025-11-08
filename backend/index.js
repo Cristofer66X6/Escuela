@@ -2,12 +2,17 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import dotenv from "dotenv";
-dotenv.config({ path: ".env" }); // ✅ Fuerza usar tu archivo .env real
+dotenv.config({ path: ".env" });
+import cookieParser from "cookie-parser";
 import { saludar, obtenerFecha } from "./modulos/ejemplo.js";
 
-// Detectar el ambiente que quieres usar
+// Detectar el ambiente que quieremos usar
 const envArg = process.argv[2];
 const envName = envArg || process.env.NODE_ENV || "sandbox";
+const allowedOrigins = [
+  "http://localhost:5500",   
+  "http://127.0.0.1:5500"    
+];
 
 // 🔐 Funciones para generar tokens
 const generateAccessToken = (user) => {
@@ -26,14 +31,6 @@ const generateRefreshToken = (user) => {
     { expiresIn: process.env.JWT_REFRESH_EXPIRES }
   );
 };
-
-
-
-// ❌ Esta parte causaba que se forzara el uso de `.env.sandbox`
-// dotenv.config({ path: path.resolve(process.cwd(), `.env.${envName}`) });
-
-// ✅ Ahora solo usamos el .env real (arriba)
-
 // Mostrar en consola para verificar qué se cargó
 console.log("🌎 Ambiente cargado: producción (usando .env real)");
 console.log("📁 Archivo .env usado: .env");
@@ -51,7 +48,17 @@ import fs from "fs";
 
 const app = express();
 app.use(express.static("public"));
-app.use(cors());
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("No permitido por CORS"));
+    }
+  },
+  credentials: true,  // permite cookies/tokens si los usas
+}));
 app.use(express.json());
 const SECRET = process.env.JWT_SECRET;
 
@@ -96,6 +103,7 @@ app.use((req, res, next) => {
   res.setHeader("X-App-Author", "Cristofer Hizo esto");
   next();
 });
+app.use(cookieParser());
 // Middleware para registrar todas las respuestas (Práctica 5)
 app.use((req, res, next) => {
   // Guardamos hora inicial
@@ -144,7 +152,8 @@ const verifyRole = (roles) => {
 // Middleware para verificar JWT
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
+  const token = authHeader && authHeader.split(" ")[1]; // "Bearer <token>"
+
   if (!token) return res.status(401).json({ error: "Token requerido" });
 
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
@@ -153,8 +162,7 @@ const verifyToken = (req, res, next) => {
     next();
   });
 };
-
-// Middleware para verificar roles específicos
+// Middleware para verificar roles
 const verifyRole = (roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.rol)) {
@@ -163,7 +171,6 @@ const verifyRole = (roles) => {
     next();
   };
 };
-
 
 /* ===================== AUTENTICACIÓN ===================== */
 // Registro
@@ -182,12 +189,9 @@ app.post("/register", async (req, res) => {
     res.status(400).json({ error: "No se pudo registrar el usuario" });
   }
 });
-
 app.get("/verify", verifyToken, (req, res) => {
   res.json({ user: req.user });
 });
-
-
 // Login
 /*app.post("/login", async (req, res) => {
   const { numero_control, contrasena } = req.body;
@@ -218,7 +222,7 @@ app.get("/verify", verifyToken, (req, res) => {
 });
 */
 // Actualizar usuario por numero_control
-app.put("/usuario/:numero_control", async (req, res) => {
+app.put("/usuario/:numero_control", verifyToken, verifyRole(["admin"]), async (req, res) => {
   const { numero_control } = req.params;
   const { nombre, carrera, contrasena } = req.body;
 
@@ -233,7 +237,6 @@ app.put("/usuario/:numero_control", async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
-
     res.json(result.rows[0]);
   } catch (err) {
     console.error("Error al actualizar usuario:", err);
@@ -259,7 +262,7 @@ app.get("/estudiante/:numero_control", async (req, res) => {
   }
 });
 // Crear o registrar datos académicos del estudiante
-app.post("/estudiantes", async (req, res) => {
+app.post("/estudiantes", verifyToken, verifyRole(["admin"]),async (req, res) => {
   const { numero_control, nombre, carrera, semestre, periodo_inicio, materias_cursadas, especialidad, creditos } = req.body;
 
   try {
@@ -277,7 +280,7 @@ app.post("/estudiantes", async (req, res) => {
   }
 });
 // Actualizar datos académicos de un estudiante por numero_control
-app.put("/estudiantes/:numero_control", async (req, res) => {
+app.put("/estudiantes/:numero_control",verifyToken, verifyRole(["admin"]), async (req, res) => {
   const { numero_control } = req.params;
   const { nombre, carrera, semestre, periodo_inicio, contrasena } = req.body;
 
@@ -299,9 +302,8 @@ app.put("/estudiantes/:numero_control", async (req, res) => {
     res.status(500).json({ error: "Error al actualizar datos" });
   }
 });
-
 // Eliminar usuario por numero_control
-app.delete("/usuario/:numero_control", async (req, res) => {
+app.delete("/usuario/:numero_control", verifyToken, verifyRole(["admin"]), async (req, res) => {
   try {
     const result = await pool.query(
       "DELETE FROM estudiantes WHERE numero_control=$1 RETURNING *",
@@ -318,9 +320,8 @@ app.delete("/usuario/:numero_control", async (req, res) => {
     res.status(400).json({ error: "No se pudo eliminar el usuario" });
   }
 });
-
 // Listar estudiantes
-app.get("/estudiantes", async (req, res) => {
+app.get("/estudiantes",verifyToken, verifyRole(["admin"]), async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM estudiantes");
     res.json(result.rows);
@@ -330,7 +331,6 @@ app.get("/estudiantes", async (req, res) => {
   }
 });
 /* ===================== MATERIAS ===================== */
-
 // Crear materia
 app.post("/materias", async (req, res) => {
   const { nombre, creditos } = req.body;
@@ -426,7 +426,6 @@ app.get("/avance/:id_estudiante", async (req, res) => {
     res.status(400).json({ error: "Error al obtener avance" });
   }
 });*/
-
 // Actualizar estado de una materia en el avance (Aprobada / Reprobada / En curso)
 // PUT /avance/:id
 app.put("/avance/:id", async (req, res) => {
@@ -449,8 +448,6 @@ app.put("/avance/:id", async (req, res) => {
     res.status(400).json({ error: "Error al actualizar avance" });
   }
 });
-
-
 //Middleware para manejar rutas no encontradas de practica 4
 const authMiddleware = async (req, res, next) => {
   const { numero_control, contrasena } = req.headers;
@@ -476,8 +473,6 @@ const authMiddleware = async (req, res, next) => {
     res.status(500).json({ error: "Error interno en autenticación" });
   }
 };
-
-
 //----------------------------------RUTAS DE PRACTICA DE LA UNIDAD 4 AGREGADAS-----------------------------------
 app.get("/saludo/:nombre", (req, res) => { 
   const { nombre } = req.params; 
@@ -524,7 +519,6 @@ app.get("/antigua", (req, res) => {
 app.get("/publica", limiter, (req, res) => {
   res.json({ mensaje: "Ruta pública con limitación de peticiones ✅" });
 });
-
 // Ruta privada (requiere autenticación)
 app.get("/privada", authMiddleware, (req, res) => {
   res.json({ 
@@ -532,7 +526,6 @@ app.get("/privada", authMiddleware, (req, res) => {
     usuario: req.user 
   });
 });
-
 // Ruta pública
 app.get("/publica", (req, res) => {
   res.send("Ruta pública ✅");
@@ -543,8 +536,6 @@ app.get("/solo-admin", authMiddleware, (req, res) => {
   }
   res.json({ mensaje: "Bienvenido administrador ✅" });
 });
-
-
 /*
 // Ruta privada que requiere token
 app.get("/privada", tokenMiddleware, (req, res) => {
@@ -554,7 +545,6 @@ app.get("/privada", tokenMiddleware, (req, res) => {
   });
 });
 */
-
 /* ===================== PAGOS DE MATERIAS E INSCRIPCIONES ===================== */
 app.post("/pago", async (req, res) => {
   const { numero_control, tipo_pago, descripcion, monto } = req.body;
@@ -652,12 +642,21 @@ app.post("/crear-pago", async (req, res) => {
     res.status(500).json({ error: "Error creando el pago" });
   }
 });
-
+// ===================== RATE LIMIT PARA LOGIN =====================
+const loginLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, 
+  max: 5, 
+  message: {
+    error: "Has excedido el número máximo de intentos. Intenta de nuevo en 1 minuto.",
+  },
+  standardHeaders: true, 
+  legacyHeaders: false,  
+});
 // Ruta de login completa
-app.post("/login", async (req, res) => {
+app.post("/login", loginLimiter, async (req, res) => {
   const { numero_control, contrasena } = req.body;
+
   try {
-    // Buscar usuario en la base de datos
     const result = await pool.query(
       "SELECT * FROM estudiantes WHERE numero_control=$1 AND contrasena=$2",
       [numero_control, contrasena]
@@ -678,77 +677,94 @@ app.post("/login", async (req, res) => {
         rol: user.rol || "user",
       },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || "1h" }
+      { expiresIn: process.env.JWT_EXPIRES_IN || "1m" } 
     );
 
     const refreshToken = jwt.sign(
-      {
+      { id: user.id },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d" }
+    );
+
+    // Guardar refresh token en BD
+    await pool.query(
+      "INSERT INTO refresh_tokens (user_id, token) VALUES ($1, $2)",
+      [user.id, refreshToken]
+    );
+
+    // Enviar el refresh token en una cookie segura
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // en HTTPS
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
+    });
+    res.json({
+      message: "✅ Login exitoso",
+      accessToken,
+      user: {
         id: user.id,
         numero_control: user.numero_control,
         nombre: user.nombre,
         rol: user.rol || "user",
       },
-      process.env.JWT_REFRESH_SECRET,
-      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d" }
-    );
-
-    refreshTokens.push(refreshToken);
-
-    
-    res.json({
-      message: "✅ Login exitoso",
-      accessToken,
-      refreshToken,
-    user: {
-      id: user.id,
-      numero_control: user.numero_control,
-      nombre: user.nombre,
-      rol: user.rol || "user",
-    },
-    redirectUrl: user.rol === "admin" ? "/admin.html" : "/estudiantes.html",
-  });
-    } catch (err) {
+    });
+  } catch (err) {
     console.error("Error en login:", err);
     res.status(500).json({ error: "Error en el servidor" });
   }
 });
-
-
-
-
 // Ruta para renovar el access token
-app.post("/token", (req, res) => {
-  const { token } = req.body;
+app.post("/token", async (req, res) => {
+  const { refreshToken } = req.cookies;
 
-  // Validar que venga el token
-  if (!token) {
-    return res.status(401).json({ error: "Refresh token requerido" });
+  if (!refreshToken) {
+    return res.status(401).json({ error: "No se encontró el refresh token" });
   }
 
-  // Verificar si el token está en la lista de válidos
-  if (!refreshTokens.includes(token)) {
-    return res.status(403).json({ error: "Token no válido o revocado" });
-  }
-
-  // Verificar y generar un nuevo access token
-  jwt.verify(token, process.env.JWT_REFRESH_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ error: "Refresh token inválido o expirado" });
-    }
-
-    const newAccessToken = jwt.sign(
-      {
-        numero_control: user.numero_control,
-        nombre: user.nombre,
-        rol: user.rol || "user"
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || "1h" }
+  try {
+    // Verificar si el token existe en la BD
+    const result = await pool.query(
+      "SELECT * FROM refresh_tokens WHERE token = $1",
+      [refreshToken]
     );
 
-    res.json({ accessToken: newAccessToken });
-  });
+    if (result.rows.length === 0) {
+      return res.status(403).json({ error: "Refresh token inválido o revocado" });
+    }
+
+    // Verificar firma
+    jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, async (err, decoded) => {
+      if (err) return res.status(403).json({ error: "Token expirado o inválido" });
+
+      // Crear un nuevo access token
+      const newAccessToken = jwt.sign(
+        { id: decoded.id },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES_IN || "1m" }
+      );
+
+      res.json({ accessToken: newAccessToken });
+    });
+  } catch (err) {
+    console.error("Error al refrescar token:", err);
+    res.status(500).json({ error: "Error interno al renovar token" });
+  }
 });
+app.post("/logout", async (req, res) => {
+  const { refreshToken } = req.cookies;
+  if (!refreshToken) return res.sendStatus(204); // sin contenido
+
+  try {
+    await pool.query("DELETE FROM refresh_tokens WHERE token = $1", [refreshToken]);
+    res.clearCookie("refreshToken");
+    res.json({ message: "✅ Sesión cerrada correctamente" });
+  } catch (err) {
+    console.error("Error al cerrar sesión:", err);
+    res.status(500).json({ error: "Error al cerrar sesión" });
+  }
+});
+
 // Ruta para verificar un access token
 app.get("/verify", (req, res) => {
   const authHeader = req.headers["authorization"];

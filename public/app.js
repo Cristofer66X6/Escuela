@@ -5,7 +5,6 @@ function mostrarForm(id) {
   document.getElementById(id).classList.remove("oculto");
   document.getElementById(id).scrollIntoView({ behavior: "smooth", block: "center" });
 }
-
 // -------------------- LOGIN --------------------
 document.getElementById("form-login")?.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -16,21 +15,28 @@ document.getElementById("form-login")?.addEventListener("submit", async (e) => {
     const res = await fetch(`${API}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ numero_control, contrasena })
+      body: JSON.stringify({ numero_control, contrasena }),
+      credentials: "include" // ✅ necesario para recibir la cookie del refresh token
     });
+
     const data = await res.json();
 
     if (res.ok) {
-      // Guarda token y datos del usuario
+      localStorage.clear();
       localStorage.setItem("token", data.accessToken);
-
       localStorage.setItem("numero_control", data.user.numero_control);
       localStorage.setItem("rol", data.user.rol);
+      localStorage.setItem("nombre", data.user.nombre); // ✅ aquí
 
       alert("✅ Login exitoso");
 
       // Redirige según el rol
-      window.location.href = data.redirectUrl;
+      if (data.user.rol === "admin") {
+        window.location.href = "admin.html";
+      } else {
+        window.location.href = "estudiantes.html";
+      }
+
     } else {
       alert("❌ " + (data.error || "Error en el login"));
     }
@@ -39,7 +45,6 @@ document.getElementById("form-login")?.addEventListener("submit", async (e) => {
     alert("❌ Error conectando con el servidor");
   }
 });
-
 // ======================
 // AGREGAR USUARIO
 // ======================
@@ -75,7 +80,6 @@ document.getElementById("form-agregar")?.addEventListener("submit", async (e) =>
     console.error(err);
   }
 });
-
 // ======================
 // ACTUALIZAR USUARIO
 // ======================
@@ -89,7 +93,7 @@ document.getElementById("form-actualizar")?.addEventListener("submit", async (e)
   const token = localStorage.getItem("token");
 
   try {
-    const res = await fetch(`${API}/usuarios/${numero}`, {
+    const res = await fetch(`${API}/usuario/${numero}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -110,7 +114,6 @@ document.getElementById("form-actualizar")?.addEventListener("submit", async (e)
     console.error(err);
   }
 });
-
 // ======================
 // ELIMINAR USUARIO
 // ======================
@@ -122,7 +125,7 @@ document.getElementById("form-eliminar")?.addEventListener("submit", async (e) =
   if (!confirm(`¿Seguro que deseas eliminar al usuario con número ${numero}?`)) return;
 
   try {
-    const res = await fetch(`${API}/usuarios/${numero}`, {
+    const res = await fetch(`${API}/usuario/${numero}`, {
       method: "DELETE",
       headers: {
         "Authorization": `Bearer ${token}`
@@ -140,7 +143,6 @@ document.getElementById("form-eliminar")?.addEventListener("submit", async (e) =
     console.error(err);
   }
 });
-
 // -------------------- REGISTRO --------------------
 document.getElementById("form-register")?.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -172,7 +174,6 @@ document.getElementById("form-register")?.addEventListener("submit", async (e) =
     alert("❌ Error conectando con el servidor");
   }
 });
-
 // ===================== VERIFICAR SESIÓN (JWT) =====================
 async function verificarSesion(rolRequerido) {
   const token = localStorage.getItem("token");
@@ -218,11 +219,6 @@ if (window.location.pathname.includes("admin.html")) {
     document.getElementById("ultimo-acceso").textContent = new Date().toLocaleString();
   });
 }
-
-
-
-
-
 // -------------------- CARGAR DATOS --------------------
 async function cargarDatosEstudiante() {
   const numero_control = localStorage.getItem("numero_control");
