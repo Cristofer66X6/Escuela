@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Talleres</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+</head>
+<body>
+
+  <nav class="sidebar" id="sidebar">
+    <button class="close-btn" onclick="toggleMenu()">✖</button>
+    <ul>
+      <li><a href="/admin.html"><i class="fa-solid fa-users"></i> Gestionar Estudiantes</a></li>
+      <li><a href="#"><i class="fa-solid fa-chalkboard-teacher"></i> Profesores</a></li>
+      <li><a href="/materiasAdmin.html"><i class="fa-solid fa-book"></i> Materias</a></li>
+      <li><a href="/extraescolaresEst.html"><i class="fa-solid fa-gears"></i> Servicios Escolares</a></li>
+      <li><a href="#"><i class="fa-solid fa-chart-line"></i> Reportes</a></li>
+      <a href="#" id="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión</a>
+    </ul>
+  </nav>
+  <button class="menu-btn" onclick="toggleMenu()">☰</button>
+
+  <div class="main-container">
+
+    <!-- ==================== ACTUALIZAR ESTADO ==================== -->
+    <div class="card">
+      <h2>Administrar Talleres Extraescolares</h2>
+
+      <form id="form-update">
+        <input type="text" id="num-control" placeholder="Número de Control" required>
+        <select id="estado">
+          <option value="Cursando">Cursando</option>
+          <option value="Sin cursar">Sin cursar</option>
+          <option value="Reprobada">Reprobada</option>
+        </select>
+        <button type="submit">Actualizar Estado</button>
+      </form>
+    </div>
+
+    <!-- ==================== AGREGAR NUEVO TALLER ==================== -->
+    <div class="card">
+      <h2>Agregar Nuevo Taller</h2>
+
+      <form id="form-taller">
+        <input type="text" id="nombre-taller" placeholder="Nombre del Taller" required>
+        <input type="text" id="tipo-taller" placeholder="Tipo (Deportivo, Cultural, Música...)" required>
+        <button type="submit">Registrar Taller</button>
+      </form>
+    </div>
+
+    <!-- ==================== LISTA DE TALLERES ==================== -->
+    <div class="card">
+      <h2>📚 Talleres Registrados</h2>
+      <table class="tabla-materias">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Taller</th>
+            <th>Tipo</th>
+          </tr>
+        </thead>
+        <tbody id="lista-talleres"></tbody>
+      </table>
+    </div>
+
+  </div>
+
+<<script>
+// Actualizar estado del alumno
+document.getElementById("form-update").addEventListener("submit", async e => {
+  e.preventDefault();
+  const numeroControl = document.getElementById("num-control").value;
+  const estado = document.getElementById("estado").value;
+
+  await fetch(`http://localhost:3000/extraescolares/actualizar`, {
+    method: "PUT",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ numeroControl, estado })
+  });
+
+  alert("Estado actualizado");
+});
+
+// Registrar nuevo taller
+document.getElementById("form-taller").addEventListener("submit", async e => {
+  e.preventDefault();
+  const taller = document.getElementById("nombre-taller").value;
+  const tipo = document.getElementById("tipo-taller").value;
+
+  await fetch(`http://localhost:3000/extraescolares/agregar`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ taller, tipo })
+  });
+
+  cargarTalleres();
+});
+
+// Cargar lista de talleres
+async function cargarTalleres() {
+  const res = await fetch(`http://localhost:3000/extraescolares/talleres`);
+  const data = await res.json();
+
+  const lista = document.getElementById("lista-talleres");
+  lista.innerHTML = "";
+
+  data.forEach(t => {
+    lista.innerHTML += `
+      <tr>
+        <td>${t.id}</td>
+        <td>${t.taller}</td>
+        <td>${t.tipo}</td>
+      </tr>
+    `;
+  });
+}
+
+cargarTalleres();
+
+// Alternar menú
+function toggleMenu() {
+  document.getElementById("sidebar").classList.toggle("activo");
+}
+</script>
+<script>
+    function mostrarForm(id) {
+      document.querySelectorAll(".form-card").forEach(f => f.classList.add("oculto"));
+      document.getElementById(id).classList.remove("oculto");
+      document.getElementById(id).scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    function toggleMenu() {
+      document.getElementById("sidebar").classList.toggle("activo");
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const nombre = localStorage.getItem("nombre") || "Administrador";
+      document.getElementById("admin-nombre").textContent = nombre;
+      document.getElementById("ultimo-acceso").textContent = new Date().toLocaleString();
+    });
+  </script>
+  <script src="app.js"></script>
+
+
+</body>
+</html>

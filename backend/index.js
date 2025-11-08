@@ -361,53 +361,70 @@ app.get("/materias", async (req, res) => {
 app.post("/avance", async (req, res) => {
   const { numero_control, id_materia } = req.body;
 
-  if (!numero_control || !id_materia) {
-    return res.status(400).json({ error: "Faltan datos: numero_control o id_materia" });
-  }
-
   try {
     const result = await pool.query(
       `INSERT INTO avance (numero_control, id_materia)
-       VALUES ($1, $2) RETURNING *`,
+       VALUES ($1, $2)
+       ON CONFLICT (numero_control, id_materia) DO NOTHING
+       RETURNING *`,
       [numero_control, id_materia]
     );
-    res.json(result.rows[0]);
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: "Ya inscrito en esta materia" });
+    }
+
+    res.json({ message: "Materia inscrita", data: result.rows[0] });
+
   } catch (err) {
-    console.error("Error al inscribir materia:", err);
-    res.status(400).json({ error: "Error al inscribir materia" });
+    res.status(500).json({ error: "Error al inscribir materia" });
   }
 });
+// ADMIN: Actualizar estado de materia inscrita
+app.put("/admin/actualizar-estado", async (req, res) => {
+  const { numeroControl, idMateria, nuevoEstado } = req.body;
+
+  try {
+    const result = await pool.query(
+      `UPDATE avance
+       SET estado = $3
+       WHERE numero_control = $1 AND id_materia = $2
+       RETURNING *`,
+      [numeroControl, idMateria, nuevoEstado]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ mensaje: "No se encontró inscripción para actualizar" });
+    }
+
+    res.json({ mensaje: "Estado actualizado correctamente" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ mensaje: "Error en el servidor" });
+  }
+});
+
+
 // GET /avance/:numero_control
 app.get("/avance/:numero_control", async (req, res) => {
   const { numero_control } = req.params;
 
   try {
     const result = await pool.query(
-      `SELECT 
-         e.numero_control, 
-         e.nombre, 
-         e.carrera, 
-         m.id AS id_materia, 
-         m.nombre AS materia, 
-         m.creditos, 
-         a.estado
+      `SELECT m.nombre, m.creditos, a.estado
        FROM avance a
-       JOIN estudiantes e ON a.numero_control = e.numero_control
-       JOIN materias m ON a.id_materia = m.id
+       INNER JOIN materias m ON m.id = a.id_materia
        WHERE a.numero_control = $1`,
       [numero_control]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: "No se encontraron materias cursadas para este estudiante" });
-    }
-
     res.json(result.rows);
+
   } catch (err) {
-    console.error("Error al obtener avance:", err);
-    res.status(500).json({ error: "Error interno al obtener avance" });
+    res.status(500).json({ error: "Error al obtener avance" });
   }
 });
+
 /*
 // Ver avance de un estudiante
 app.get("/avance/:id_estudiante", async (req, res) => {
@@ -764,7 +781,6 @@ app.post("/logout", async (req, res) => {
     res.status(500).json({ error: "Error al cerrar sesión" });
   }
 });
-
 // Ruta para verificar un access token
 app.get("/verify", (req, res) => {
   const authHeader = req.headers["authorization"];
@@ -786,6 +802,94 @@ app.get("/verify", (req, res) => {
     });
   });
 });
+// Obtener talleres
+// ===================== EXTRAESCOLARES =====================
+
+// Obtener talleres disponibles (alumno + admin)
+app.get("/extraescolares/talleres", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM talleres");
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+// Alumno se inscribe a un taller
+app.post("/extraescolares/inscribir", async (req, res) => {
+  const { numero_control, taller } = req.body;
+
+  try {
+    await pool.query(
+      "INSERT INTO extraescolares (numero_control, taller, estado) VALUES ($1, $2, 'Cursando')",
+      [numero_control, taller]
+    );
+    res.json({ message: "Alumno inscrito al taller" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+// Admin agrega nuevo taller al catálogo
+app.post("/extraescolares/agregar", async (req, res) => {
+  const { taller, tipo } = req.body;
+
+  try {
+    await pool.query(
+      "INSERT INTO talleres (taller, tipo) VALUES ($1, $2)",
+      [taller, tipo]
+    );
+    res.json({ message: "Taller agregado correctamente" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+// Admin cambia estado de un alumno (Cursando / Sin cursar / Reprobada)
+app.put("/extraescolares/estado", async (req, res) => {
+  const { numeroControl, estado } = req.body;
+
+  try {
+    await pool.query(
+      "UPDATE extraescolares SET estado = $1 WHERE numero_control = $2",
+      [estado, numeroControl]
+    );
+    res.json({ message: "Estado actualizado correctamente" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+// Alumno ve sus talleres inscritos y su estado
+app.get("/extraescolares/alumno/:nc", async (req, res) => {
+  const { nc } = req.params;
+
+  try {
+    const result = await pool.query(
+      "SELECT taller, estado FROM extraescolares WHERE numero_control = $1",
+      [nc]
+  );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+app.post("/extraescolares/registrar-alumno", async (req, res) => {
+  const { numero_control, tallerID } = req.body;
+
+  try {
+    await pool.query(
+      `INSERT INTO extraescolares (taller, numero_control, estado)
+       SELECT t.taller, $1, 'Cursando'
+       FROM talleres t
+       WHERE t.id = $2`,
+      [numero_control, tallerID]
+    );
+
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
 
 
 /* ===================== INICIO SERVIDOR ===================== */

@@ -2,16 +2,16 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Materias</title>
+  <title>Talleres Extraescolares</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 </head>
 <body>
-  <nav class="sidebar" id="sidebar">
+   <nav class="sidebar" id="sidebar">
     <button class="close-btn" onclick="toggleMenu()">✖</button>
     <ul>
-      <li><a href="/estudiantes.html"><i class="fa-solid fa-user-tie"></i>  Estudiantes</a></li>
-      <li><a href="/materias.html"><i class="fa-solid fa-book"></i>  Materias</a></li>
+      <li><a href="/estudiantes.html"><i class="fa-solid fa-user-tie"></i> Estudiantes</a></li>
+      <li><a href="/materias.html"><i class="fa-solid fa-book"></i> Materias</a></li>
       <li><a href="#"><i class="fa-solid fa-screwdriver-wrench"></i> Servicios</a></li>
       <li><a href="#"><i class="fa-solid fa-dumbbell"></i> Extraescolares</a></li>
       <a href="#" id="btn-logout">
@@ -19,42 +19,51 @@
     </ul>
   </nav>
 
-  <!-- ====== BOTÓN HAMBURGUESA ====== -->
   <button class="menu-btn" onclick="toggleMenu()">☰</button>
 
   <div class="main-wrapper">
     <div class="main-container">
       <div class="card">
-        <h1>Agrega materias o ve ru avance</h1>
+        <h2>Talleres Extraescolares</h2>
+
+        <!-- Talleres del alumno -->
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>Taller</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="lista-talleres"></tbody>
+        </table>
+
+        <h3>Inscribir a Taller</h3>
+        <form id="form-taller">
+          <select id="select-taller"></select>
+          <button type="submit">Inscribir</button>
+        </form>
       </div>
-      <form id="form-inscribir" class="card">
-      <h3>Inscribir Materia</h3>
-      <select id="ins-materia"></select>
-      <button type="submit">Inscribir</button>
-    </form>
-    <table>
-  <tbody id="contenido-avance"></tbody>
-</table>
     </div>
   </div>
-  <script src="app.js"></script>
-  <script>
-  cargarMateriasInscritas();
-</script>
+
+<script src="app-extraescolares.js"></script>
 <script>
-    // Mostrar y ocultar formularios
     function mostrarForm(id) {
       document.querySelectorAll(".form-card").forEach(f => f.classList.add("oculto"));
       document.getElementById(id).classList.remove("oculto");
       document.getElementById(id).scrollIntoView({ behavior: "smooth", block: "center" });
     }
 
-    // Alternar menú lateral
     function toggleMenu() {
       document.getElementById("sidebar").classList.toggle("activo");
     }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const nombre = localStorage.getItem("nombre") || "Administrador";
+      document.getElementById("admin-nombre").textContent = nombre;
+      document.getElementById("ultimo-acceso").textContent = new Date().toLocaleString();
+    });
   </script>
-
-
+  <script src="app.js"></script>
 </body>
 </html>

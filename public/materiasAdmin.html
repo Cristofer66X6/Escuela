@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Materias</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+</head>
+</head>
+<body>
+    <nav class="sidebar" id="sidebar">
+    <button class="close-btn" onclick="toggleMenu()">✖</button>
+    <ul>
+      <li><a href="/admin.html"><i class="fa-solid fa-users"></i> Gestionar Estudiantes</a></li>
+      <li><a href="#"><i class="fa-solid fa-chalkboard-teacher"></i> Profesores</a></li>
+      <li><a href="/materiasAdmin.html"><i class="fa-solid fa-book"></i> Materias</a></li>
+      <li><a href="/extraescolaresEst.html"><i class="fa-solid fa-gears"></i> Servicios Escolares</a></li>
+      <li><a href="#"><i class="fa-solid fa-chart-line"></i> Reportes</a></li>
+      <a href="#" id="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión</a>
+    </ul>
+  </nav>
+  <button class="menu-btn" onclick="toggleMenu()">☰</button>
+
+  <div class="main-container">
+    <div class="card">
+      <h1>Agrega nuevas materias</h1>
+      
+    </div>
+    <div class="card">
+    <form id="form-actualizar-estado">
+    <h3>Actualizar Estado de Materia</h3>
+
+  <label>Número de Control:</label>
+  <input type="text" id="est-control" required>
+
+  <label>Materia (ID):</label>
+  <input type="number" id="est-materia" required>
+
+  <label>Nuevo Estado:</label>
+  <select id="est-estado">
+    <option value="Cursando">Cursando</option>
+    <option value="Aprobada">Aprobada</option>
+    <option value="Reprobada">Reprobada</option>
+    <option value="Baja">Baja</option>
+  </select>
+
+  <button type="submit">Actualizar</button>
+</form>
+</div>
+
+
+    <div class="card">
+      <h2><i class="fa-solid fa-book"></i> Registrar Nueva Materia</h2>
+      <form id="form-materia-admin">
+        <input type="text" id="materia-nombre" placeholder="Nombre de la materia" required>
+        <input type="number" id="materia-creditos" placeholder="Créditos" min="1" required>
+        <button type="submit">Registrar</button>
+      </form>
+    </div>
+
+
+    <div class="card">
+      <h2>📚 Materias Registradas</h2>
+      <table class="tabla-materias">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Créditos</th>
+          </tr>
+        </thead>
+        <tbody id="lista-materias-admin"></tbody>
+      </table>
+    </div>
+    <script>
+    function mostrarForm(id) {
+      document.querySelectorAll(".form-card").forEach(f => f.classList.add("oculto"));
+      document.getElementById(id).classList.remove("oculto");
+      document.getElementById(id).scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    function toggleMenu() {
+      document.getElementById("sidebar").classList.toggle("activo");
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const nombre = localStorage.getItem("nombre") || "Administrador";
+      document.getElementById("admin-nombre").textContent = nombre;
+      document.getElementById("ultimo-acceso").textContent = new Date().toLocaleString();
+    });
+  </script>
+  <script src="app.js"></script>
+
+    
+</body>
+</html>

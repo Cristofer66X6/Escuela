@@ -10,10 +10,12 @@
   <nav class="sidebar" id="sidebar">
     <button class="close-btn" onclick="toggleMenu()">✖</button>
     <ul>
-      <li><a href="#"><i class="fa-solid fa-user-tie"></i>  Estudiantes</a></li>
-      <li><a href="#"><i class="fa-solid fa-book"></i>  Materias</a></li>
-      <li><a href="#"><i class="fa-solid fa-screwdriver-wrench"></i> Servicios</a></li>
+      <li><a href="/estudiantes.html"><i class="fa-solid fa-user-tie"></i>  Estudiantes</a></li>
+      <li><a href="/materias.html"><i class="fa-solid fa-book"></i>  Materias</a></li>
+      <li><a href="/extraescolaresEst.html"><i class="fa-solid fa-screwdriver-wrench"></i> Servicios</a></li>
       <li><a href="#"><i class="fa-solid fa-dumbbell"></i> Extraescolares</a></li>
+      <a href="#" id="btn-logout">
+      <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
     </ul>
   </nav>
 
@@ -41,7 +43,7 @@
           <p><strong>Créditos:</strong> <span id="creditos"></span></p>
         </div>
       </div>
-
+  
       <!--Tarjeta para Actualizar -->
       <div class="card form-card oculto" id="form-update">
         <h2>Actualizar Usuario</h2>
@@ -52,48 +54,11 @@
           <button type="submit">Actualizar</button>
         </form>
       </div>
-
-      <!--Tarjeta para Eliminar -->
-      <div class="card form-card oculto" id="form-delete">
-        <h2>Eliminar Usuario</h2>
-        <p class="alerta">⚠️ Esta acción no se puede deshacer</p>
-        <form>
-          <button type="submit" class="btn-danger">Eliminar Usuario</button>
-        </form>
-      </div>
-
       <!--Tarjeta de Acciones -->
       <div class="card">
         <h2>Acciones</h2>
         <div class="links">
           <button onclick="mostrarForm('form-update')">Actualizar Usuario</button>
-          <button onclick="mostrarForm('form-delete')">Eliminar Usuario</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ====== CONTENEDOR DE MATERIAS (al final) ====== -->
-    <div class="materias-container">
-      <!-- Formulario para agregar materias -->
-      <div class="card form-card oculto" id="form-materia">
-        <h2>Agregar Nueva Materia</h2>
-        <form id="materia-form">
-          <input type="text" id="materia-nombre" placeholder="Nombre de la materia" required>
-          <input type="number" id="materia-creditos" placeholder="Créditos" min="1" required>
-          <button type="submit">Agregar Materia</button>
-        </form>
-
-        <div id="materias-lista">
-          <h3>📚 Materias Registradas</h3>
-          <ul id="lista-materias"></ul>
-        </div>
-      </div>
-
-      <!-- Sección para mostrar materias -->
-      <div class="card">
-        <h2>Materias</h2>
-        <div class="links">
-          <button onclick="mostrarForm('form-materia')">Agregar Nueva Materia</button>
         </div>
       </div>
     </div>
@@ -115,5 +80,9 @@
   </script>
 
   <script src="app.js"></script>
+  <script>
+  cargarMateriasInscritas();
+</script>
+
 </body>
 </html>

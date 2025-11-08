@@ -245,6 +245,34 @@ async function cargarDatosEstudiante() {
     alert("❌ Error cargando datos del estudiante");
   }
 }
+async function cargarMateriasParaInscribir() {
+  try {
+    const res = await fetch(`${API}/materias`);
+    const materias = await res.json();
+    const select = document.getElementById("ins-materia");
+    if (!select) return;
+
+    select.innerHTML = "";
+    materias.forEach(m => {
+      const option = document.createElement("option");
+      option.value = m.id;
+      option.textContent = `${m.nombre} (${m.creditos} créditos)`;
+      select.appendChild(option);
+    });
+  } catch (err) {
+    console.error("Error cargando materias:", err);
+  }
+}
+
+
+
+// Se llama al cargar la página
+window.addEventListener("DOMContentLoaded", () => {
+  cargarMateriasParaInscribir();
+  cargarMateriasInscritas();
+});
+
+
 
 if (document.getElementById("nombre")) cargarDatosEstudiante();
 /*
@@ -384,6 +412,121 @@ async function obtenerMaterias() {
     console.error("Error al obtener materias:", err);
   }
 }
+
+async function cargarMateriasInscritas() {
+  const numero_control = localStorage.getItem("numero_control");
+  if (!numero_control) return;
+
+  try {
+    const res = await fetch(`${API}/avance/${numero_control}`);
+    const data = await res.json();
+    const tabla = document.getElementById("contenido-avance");
+
+    tabla.innerHTML = ""; // limpiar tabla
+
+    data.forEach(m => {
+      const fila = document.createElement("tr");
+      fila.innerHTML = `
+        <td>${m.nombre}</td>
+        <td>${m.creditos}</td>
+        <td>${m.estado}</td>
+      `;
+      tabla.appendChild(fila);
+    });
+
+  } catch (err) {
+    console.error("Error cargando materias del avance", err);
+  }
+}
+async function cargarSelectMaterias() {
+  const res = await fetch(`${API}/materias`);
+  const materias = await res.json();
+  const select = document.getElementById("ins-materia");
+  select.innerHTML = materias.map(m => `<option value="${m.id}">${m.nombre}</option>`).join("");
+}
+document.getElementById("form-inscribir")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const numero_control = localStorage.getItem("numero_control");
+  const id_materia = document.getElementById("ins-materia").value;
+
+  const res = await fetch(`${API}/avance`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ numero_control, id_materia })
+  });
+
+  const data = await res.json();
+  alert(data.message || data.error);
+  cargarMateriasInscritas();
+});
+async function cargarMateriasAdmin() {
+  const res = await fetch(`${API}/materias`);
+  const materias = await res.json();
+  const lista = document.getElementById("lista-materias-admin");
+  if (!lista) return;
+  lista.innerHTML = materias.map(m => `
+    <tr>
+      <td>${m.id}</td>
+      <td>${m.nombre}</td>
+      <td>${m.creditos}</td>
+    </tr>
+  `).join("");
+}
+
+if (document.getElementById("form-materia-admin")) {
+  document.getElementById("form-materia-admin").addEventListener("submit", async e => {
+    e.preventDefault();
+    const nombre = document.getElementById("materia-nombre").value;
+    const creditos = document.getElementById("materia-creditos").value;
+
+    await fetch(`${API}/materias`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nombre, creditos })
+    });
+
+    cargarMateriasAdmin();
+  });
+
+  cargarMateriasAdmin();
+}
+
+if (document.getElementById("nombre")) {
+  cargarDatosEstudiante();
+  cargarMateriasInscritas();
+  cargarSelectMaterias();
+}
+document.getElementById("btn-logout")?.addEventListener("click", async () => {
+  try {
+    await fetch(`${API}/logout`, {
+      method: "POST",
+      credentials: "include"
+    });
+
+    localStorage.clear();
+    window.location.href = "index.html";
+  } catch (err) {
+    console.error(err);
+  }
+});
+document.getElementById("form-actualizar-estado").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const numeroControl = document.getElementById("est-control").value;
+  const idMateria = document.getElementById("est-materia").value;
+  const nuevoEstado = document.getElementById("est-estado").value;
+
+  const res = await fetch("http://localhost:3000/admin/actualizar-estado", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ numeroControl, idMateria, nuevoEstado })
+  });
+
+  const data = await res.json();
+  alert(data.mensaje);
+});
+
 
 // Ejecutar cuando se cargue la página
 window.addEventListener("DOMContentLoaded", obtenerMaterias);

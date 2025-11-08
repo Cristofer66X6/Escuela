@@ -7,7 +7,8 @@
 </head>
 <body>
   <div class="container">
-    <h1>Gestión Escolar</h1>
+    <h1>TECNM</h1>
+    <p>Bienvenido al sistema de gestión escolar</p>
     <!-- LOGIN -->
     <form id="form-login" class="active">
       <input type="text" id="login-numero" placeholder="Número de control" required>
@@ -23,11 +24,13 @@
       <input type="number" id="reg-semestre" placeholder="Semestre">
       <input type="password" id="reg-pass" placeholder="Contraseña" required>
 
-
+<!-- 
   <select id="reg-rol" required>
     <option value="user">Estudiante</option>
     <option value="admin">Administrador</option>
   </select>
+
+-->
 
   <button type="submit">Registrarse</button>
     </form>
@@ -37,7 +40,6 @@
       <a href="#" onclick="mostrarForm('form-register')">Registrarse</a>
     </div>
   </div>
-
   <script src="app.js"></script>
   <script>
     function mostrarForm(id) {

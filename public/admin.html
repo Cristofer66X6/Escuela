@@ -11,16 +11,16 @@
   <nav class="sidebar" id="sidebar">
     <button class="close-btn" onclick="toggleMenu()">✖</button>
     <ul>
-      <li><a href="#"><i class="fa-solid fa-users"></i>  Gestionar Estudiantes</a></li>
-      <li><a href="#"><i class="fa-solid fa-chalkboard-teacher"></i>  Profesores</a></li>
-      <li><a href="#"><i class="fa-solid fa-book"></i>  Materias</a></li>
-      <li><a href="#"><i class="fa-solid fa-gears"></i>  Servicios Escolares</a></li>
-      <li><a href="#"><i class="fa-solid fa-chart-line"></i>  Reportes</a></li>
+      <li><a href="/admin.html"><i class="fa-solid fa-users"></i> Gestionar Estudiantes</a></li>
+      <li><a href="#"><i class="fa-solid fa-chalkboard-teacher"></i> Profesores</a></li>
+      <li><a href="/materiasAdmin.html"><i class="fa-solid fa-book"></i> Materias</a></li>
+      <li><a href="/extraescolaresAmin.html"><i class="fa-solid fa-gears"></i> Servicios Escolares</a></li>
+      <li><a href="#"><i class="fa-solid fa-chart-line"></i> Reportes</a></li>
+      <a href="#" id="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión</a>
     </ul>
   </nav>
-
- 
   <button class="menu-btn" onclick="toggleMenu()">☰</button>
+
   <div class="main-container">
 
     <div class="card">
@@ -28,7 +28,6 @@
       <p class="subtext">Panel de control del administrador del sistema</p>
     </div>
 
-  
     <div class="card">
       <h2><i class="fa-solid fa-users-gear"></i> Gestión de Usuarios</h2>
       <div class="info">
@@ -38,7 +37,6 @@
       </div>
     </div>
 
-   
     <div class="card form-card oculto" id="form-add">
       <h2>Agregar Nuevo Usuario</h2>
       <form id="form-agregar">
@@ -54,7 +52,6 @@
       </form>
     </div>
 
-   
     <div class="card form-card oculto" id="form-update">
       <h2>Actualizar Usuario</h2>
       <form id="form-actualizar">
@@ -66,7 +63,6 @@
       </form>
     </div>
 
-   
     <div class="card form-card oculto" id="form-delete">
       <h2>Eliminar Usuario</h2>
       <p class="alerta">⚠️ Esta acción no se puede deshacer</p>
@@ -76,28 +72,25 @@
       </form>
     </div>
 
-   
     <div class="card">
       <h2><i class="fa-solid fa-database"></i> Información del Sistema</h2>
       <p><strong>Usuarios totales:</strong> <span id="total-usuarios">--</span></p>
       <p><strong>Materias registradas:</strong> <span id="total-materias">--</span></p>
       <p><strong>Último acceso:</strong> <span id="ultimo-acceso"></span></p>
     </div>
-  </div>
+ 
+  </div> 
   <script>
-    // Mostrar y ocultar formularios
     function mostrarForm(id) {
       document.querySelectorAll(".form-card").forEach(f => f.classList.add("oculto"));
       document.getElementById(id).classList.remove("oculto");
       document.getElementById(id).scrollIntoView({ behavior: "smooth", block: "center" });
     }
 
-    // Alternar menú lateral
     function toggleMenu() {
       document.getElementById("sidebar").classList.toggle("activo");
     }
 
-    // Mostrar nombre del admin
     document.addEventListener("DOMContentLoaded", () => {
       const nombre = localStorage.getItem("nombre") || "Administrador";
       document.getElementById("admin-nombre").textContent = nombre;
