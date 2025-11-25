@@ -1,11 +1,12 @@
 import express from "express";
 import cors from "cors";
 import path from "path";
+import http from "http";
 import dotenv from "dotenv";
 dotenv.config({ path: ".env" });
 import cookieParser from "cookie-parser";
 import { saludar, obtenerFecha } from "./modulos/ejemplo.js";
-
+import { Server } from "socket.io";
 // Detectar el ambiente que quieremos usar
 const envArg = process.argv[2];
 const envName = envArg || process.env.NODE_ENV || "sandbox";
@@ -14,7 +15,7 @@ const allowedOrigins = [
   "http://127.0.0.1:5500"    
 ];
 
-// 🔐 Funciones para generar tokens
+// Funciones para generar tokens
 const generateAccessToken = (user) => {
   return jwt.sign(
     { id: user.id, numero_control: user.numero_control, role: user.rol || "user" },
@@ -32,21 +33,101 @@ const generateRefreshToken = (user) => {
   );
 };
 // Mostrar en consola para verificar qué se cargó
-console.log("🌎 Ambiente cargado: producción (usando .env real)");
-console.log("📁 Archivo .env usado: .env");
-console.log("⚙️  PAGO_AMBIENTE =", process.env.PAGO_AMBIENTE);
+console.log("Ambiente cargado: producción (usando .env real)");
+console.log("Archivo .env usado: .env");
+console.log("PAGO_AMBIENTE =", process.env.PAGO_AMBIENTE);
 console.log(
   "🗄️  DATABASE_URL =",
   process.env.DATABASE_URL ? process.env.DATABASE_URL.split("@")[1] : "No definida"
 );
 
 import pool from "./db.js";
+
 import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
 
 import fs from "fs";
-
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*" 
+  }
+});
+
+// Websockets
+// LISTA GLOBAL DE ADMINS CONECTADOS (IMPORTANTE)
+const adminsConectados = new Set();
+
+// Websockets
+io.on("connection", (socket) => {
+  console.log("Cliente conectado:", socket.id);
+
+  // SET GLOBAL PARA ADMINS
+  if (!io.adminsConectados) io.adminsConectados = new Set();
+
+  // Bienvenida
+  socket.emit("bienvenida", {
+    mensaje: "Bienvenido al servidor en tiempo real"
+  });
+
+  // Evento de inicio
+  socket.on("evento-inicio", (data) => {
+    // Registra solo admins en el set
+    if (data.rol === "admin") {
+      io.adminsConectados.add(socket.id);
+    }
+
+    // Registrar últimos accesos
+    if (!io.ultimosAccesos) io.ultimosAccesos = [];
+
+    io.ultimosAccesos.unshift({
+      usuario: data.usuario,
+      vista: data.vista,
+      fecha: data.fecha
+    });
+
+    if (io.ultimosAccesos.length > 10) io.ultimosAccesos.pop();
+
+    // Mandar solo a admins
+    io.adminsConectados.forEach(id => {
+      const adminSocket = io.sockets.sockets.get(id);
+      if (adminSocket) adminSocket.emit("ultimos-accesos", io.ultimosAccesos);
+    });
+  });
+
+  // Notificar cambios de usuario (solo admins)
+  socket.on("usuario-cambio", (data) => {
+    io.adminsConectados.forEach(id => {
+      const adminSocket = io.sockets.sockets.get(id);
+      if (adminSocket) adminSocket.emit("mensaje-global", {
+        mensaje: `El admin ${data.admin} ${data.tipo} al usuario ${data.nombre} (${data.numero_control})`,
+        tipo: "info",
+        fecha: new Date().toISOString()
+      });
+    });
+  });
+
+  
+  socket.on("usuario-logout", (data) => {
+    if (data.rol !== "admin") {
+      io.adminsConectados.forEach(id => {
+        const adminSocket = io.sockets.sockets.get(id);
+        if (adminSocket) adminSocket.emit("mensaje-global", {
+          mensaje: `El usuario ${data.usuario} cerró sesión`,
+          tipo: "warning",
+          fecha: new Date().toISOString()
+        });
+      });
+    }
+  });
+
+  // Desconexión
+  socket.on("disconnect", () => {
+    io.adminsConectados.delete(socket.id);
+  });
+});
+
 app.use(express.static("public"));
 app.use(cors({
   origin: function (origin, callback) {
@@ -526,7 +607,7 @@ app.get("/saludo", (req, res) => {
 });
 // Ruta nueva
 app.get("/nueva", (req, res) => {
-  res.send("Bienvenido a la ruta nueva 🚀");
+  res.send("Bienvenido a la ruta nueva ");
 });
 // Ruta antigua que redirige a la nueva
 app.get("/antigua", (req, res) => {
@@ -534,30 +615,30 @@ app.get("/antigua", (req, res) => {
 });
 // Ruta pública (sin restricciones)
 app.get("/publica", limiter, (req, res) => {
-  res.json({ mensaje: "Ruta pública con limitación de peticiones ✅" });
+  res.json({ mensaje: "Ruta pública con limitación de peticiones " });
 });
 // Ruta privada (requiere autenticación)
 app.get("/privada", authMiddleware, (req, res) => {
   res.json({ 
-    mensaje: "Ruta privada: acceso permitido ✅", 
+    mensaje: "Ruta privada: acceso permitido ", 
     usuario: req.user 
   });
 });
 // Ruta pública
 app.get("/publica", (req, res) => {
-  res.send("Ruta pública ✅");
+  res.send("Ruta pública ");
 });
 app.get("/solo-admin", authMiddleware, (req, res) => {
   if (req.user.carrera !== "Admin") {
     return res.status(403).json({ error: "Acceso prohibido: solo administradores" });
   }
-  res.json({ mensaje: "Bienvenido administrador ✅" });
+  res.json({ mensaje: "Bienvenido administrador " });
 });
 /*
 // Ruta privada que requiere token
 app.get("/privada", tokenMiddleware, (req, res) => {
   res.json({
-    mensaje: "Acceso permitido con token ✅",
+    mensaje: "Acceso permitido con token ",
     usuario: req.user
   });
 });
@@ -590,7 +671,7 @@ app.post("/pago", async (req, res) => {
         fs.appendFileSync(path.join(process.cwd(), "pagos_productivo.log"), logPago);
 
         resultado = {
-          mensaje: "Pago realizado correctamente ✅",
+          mensaje: "Pago realizado correctamente ",
           ambiente,
           pago: result.rows[0]
         };
@@ -599,7 +680,7 @@ app.post("/pago", async (req, res) => {
       case "ambiental":
         // No guarda nada, solo simula
         resultado = {
-          mensaje: "Pago ambiental simulado (no se registró en la base de datos) 🌿",
+          mensaje: "Pago ambiental simulado (no se registró en la base de datos) ",
           ambiente,
           detalles: { numero_control, tipo_pago, monto, descripcion }
         };
@@ -608,7 +689,7 @@ app.post("/pago", async (req, res) => {
       case "sandbox":
         // Genera datos falsos para pruebas
         resultado = {
-          mensaje: "Pago de prueba (sandbox) 🧪",
+          mensaje: "Pago de prueba (sandbox) ",
           ambiente,
           datos_ejemplo: {
             id_pago: Math.floor(Math.random() * 10000),
@@ -694,7 +775,7 @@ app.post("/login", loginLimiter, async (req, res) => {
         rol: user.rol || "user",
       },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || "1m" } 
+      { expiresIn: process.env.JWT_EXPIRES_IN || "1m" }
     );
 
     const refreshToken = jwt.sign(
@@ -709,15 +790,23 @@ app.post("/login", loginLimiter, async (req, res) => {
       [user.id, refreshToken]
     );
 
-    // Enviar el refresh token en una cookie segura
+    
+    io.emit("mensaje-global", {
+      mensaje: `El usuario ${user.numero_control} (${user.nombre}) ha iniciado sesión`,
+      tipo: "success",
+      fecha: new Date().toISOString(),
+    });
+
+    // Enviar refresh token en cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // en HTTPS
+      secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
+
     res.json({
-      message: "✅ Login exitoso",
+      message: " Login exitoso",
       accessToken,
       user: {
         id: user.id,
@@ -731,6 +820,7 @@ app.post("/login", loginLimiter, async (req, res) => {
     res.status(500).json({ error: "Error en el servidor" });
   }
 });
+
 // Ruta para renovar el access token
 app.post("/token", async (req, res) => {
   const { refreshToken } = req.cookies;
@@ -775,7 +865,7 @@ app.post("/logout", async (req, res) => {
   try {
     await pool.query("DELETE FROM refresh_tokens WHERE token = $1", [refreshToken]);
     res.clearCookie("refreshToken");
-    res.json({ message: "✅ Sesión cerrada correctamente" });
+    res.json({ message: "Sesión cerrada correctamente" });
   } catch (err) {
     console.error("Error al cerrar sesión:", err);
     res.status(500).json({ error: "Error al cerrar sesión" });
@@ -797,7 +887,7 @@ app.get("/verify", (req, res) => {
 
     res.json({
       valid: true,
-      message: "Token válido ✅",
+      message: "Token válido",
       user
     });
   });
@@ -887,14 +977,10 @@ app.post("/extraescolares/registrar-alumno", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-
-
-
-
 /* ===================== INICIO SERVIDOR ===================== */
-const PORT = process.env.PORT || 3000; 
-app.listen(PORT, () => {
-  console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
+//const PORT = process.env.PORT || 3000; 
+
+server.listen(3000, () => {
+  console.log("Servidor con WebSockets corriendo en puerto 3000");
 });
   

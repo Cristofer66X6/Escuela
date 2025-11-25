@@ -5,33 +5,34 @@
   <title>Panel del Estudiante</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 </head>
 <body>
+
   <nav class="sidebar" id="sidebar">
     <button class="close-btn" onclick="toggleMenu()">✖</button>
     <ul>
-      <li><a href="/estudiantes.html"><i class="fa-solid fa-user-tie"></i>  Estudiantes</a></li>
-      <li><a href="/materias.html"><i class="fa-solid fa-book"></i>  Materias</a></li>
+      <li><a href="/estudiantes.html"><i class="fa-solid fa-user-tie"></i> Estudiantes</a></li>
+      <li><a href="/materias.html"><i class="fa-solid fa-book"></i> Materias</a></li>
       <li><a href="/extraescolaresEst.html"><i class="fa-solid fa-screwdriver-wrench"></i> Servicios</a></li>
       <li><a href="#"><i class="fa-solid fa-dumbbell"></i> Extraescolares</a></li>
+
       <a href="#" id="btn-logout">
-      <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+        <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+      </a>
     </ul>
   </nav>
 
-  <!-- ====== BOTÓN HAMBURGUESA ====== -->
   <button class="menu-btn" onclick="toggleMenu()">☰</button>
 
-  <!-- ====== CONTENEDOR PRINCIPAL ====== -->
   <div class="main-wrapper">
 
     <div class="main-container">
-      <!-- Tarjeta de Bienvenida -->
+
       <div class="card">
         <h1>Bienvenido, <span id="nombre"></span></h1>
       </div>
 
-      <!--Tarjeta de Información -->
       <div class="card">
         <h2>Información del Estudiante</h2>
         <div class="info">
@@ -43,8 +44,7 @@
           <p><strong>Créditos:</strong> <span id="creditos"></span></p>
         </div>
       </div>
-  
-      <!--Tarjeta para Actualizar -->
+
       <div class="card form-card oculto" id="form-update">
         <h2>Actualizar Usuario</h2>
         <form>
@@ -54,34 +54,71 @@
           <button type="submit">Actualizar</button>
         </form>
       </div>
-      <!--Tarjeta de Acciones -->
+
       <div class="card">
         <h2>Acciones</h2>
         <div class="links">
           <button onclick="mostrarForm('form-update')">Actualizar Usuario</button>
         </div>
       </div>
+
     </div>
 
   </div>
 
-  <script>
-    // Mostrar y ocultar formularios
-    function mostrarForm(id) {
-      document.querySelectorAll(".form-card").forEach(f => f.classList.add("oculto"));
-      document.getElementById(id).classList.remove("oculto");
-      document.getElementById(id).scrollIntoView({ behavior: "smooth", block: "center" });
-    }
+<script>
+function mostrarForm(id) {
+  document.querySelectorAll(".form-card").forEach(f => f.classList.add("oculto"));
+  document.getElementById(id).classList.remove("oculto");
+  document.getElementById(id).scrollIntoView({ behavior: "smooth", block: "center" });
+}
 
-    // Alternar menú lateral
-    function toggleMenu() {
-      document.getElementById("sidebar").classList.toggle("activo");
-    }
-  </script>
+function toggleMenu() {
+  document.getElementById("sidebar").classList.toggle("activo");
+}
+</script>
 
-  <script src="app.js"></script>
-  <script>
-  cargarMateriasInscritas();
+<script>
+const socket = io("http://localhost:3000");
+
+/*********************
+ * 1. Enviar evento-inicio
+ *********************/
+document.addEventListener("DOMContentLoaded", () => {
+  const nombre = sessionStorage.getItem("nombre");
+  const rol = sessionStorage.getItem("rol");
+
+  if (!rol || rol !== "user") {
+    window.location.href = "index.html";
+    return;
+  }
+
+  document.getElementById("nombre").textContent = nombre;
+
+  socket.emit("evento-inicio", {
+    vista: window.location.pathname,
+    usuario: nombre,
+    rol: rol,
+    fecha: new Date().toISOString()
+  });
+});
+
+/*********************
+ * 2. Logout — usuarios SI notifican
+ *********************/
+document.getElementById("btn-logout")?.addEventListener("click", async () => {
+  const nombre = sessionStorage.getItem("nombre");
+
+  socket.emit("usuario-logout", { usuario: nombre });
+
+  sessionStorage.clear();
+  window.location.href = "index.html";
+});
+</script>
+
+<script src="app.js"></script>
+<script>
+cargarMateriasInscritas();
 </script>
 
 </body>

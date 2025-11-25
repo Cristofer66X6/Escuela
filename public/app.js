@@ -1,10 +1,12 @@
 const API = "http://localhost:3000";
+
 // ===================== MOSTRAR FORMULARIOS (versión para admin.html) =====================
 function mostrarForm(id) {
   document.querySelectorAll(".form-card").forEach(f => f.classList.add("oculto"));
   document.getElementById(id).classList.remove("oculto");
   document.getElementById(id).scrollIntoView({ behavior: "smooth", block: "center" });
 }
+
 // -------------------- LOGIN --------------------
 document.getElementById("form-login")?.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -16,21 +18,20 @@ document.getElementById("form-login")?.addEventListener("submit", async (e) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ numero_control, contrasena }),
-      credentials: "include" // ✅ necesario para recibir la cookie del refresh token
+      credentials: "include"
     });
 
     const data = await res.json();
 
     if (res.ok) {
-      localStorage.clear();
-      localStorage.setItem("token", data.accessToken);
-      localStorage.setItem("numero_control", data.user.numero_control);
-      localStorage.setItem("rol", data.user.rol);
-      localStorage.setItem("nombre", data.user.nombre); // ✅ aquí
+      sessionStorage.clear();
+      sessionStorage.setItem("token", data.accessToken);
+      sessionStorage.setItem("numero_control", data.user.numero_control);
+      sessionStorage.setItem("rol", data.user.rol);
+      sessionStorage.setItem("nombre", data.user.nombre);
 
-      alert("✅ Login exitoso");
+      alert("Login exitoso");
 
-      // Redirige según el rol
       if (data.user.rol === "admin") {
         window.location.href = "admin.html";
       } else {
@@ -45,6 +46,7 @@ document.getElementById("form-login")?.addEventListener("submit", async (e) => {
     alert("❌ Error conectando con el servidor");
   }
 });
+
 // ======================
 // AGREGAR USUARIO
 // ======================
@@ -56,7 +58,7 @@ document.getElementById("form-agregar")?.addEventListener("submit", async (e) =>
   const numero = document.getElementById("add-numero").value;
   const password = document.getElementById("add-pass").value;
   const rol = document.getElementById("add-rol").value;
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token");
 
   try {
     const res = await fetch(`${API}/register`, {
@@ -71,7 +73,7 @@ document.getElementById("form-agregar")?.addEventListener("submit", async (e) =>
 
     const data = await res.json();
     if (res.ok) {
-      alert("✅ Usuario agregado correctamente");
+      alert("Usuario agregado correctamente");
       e.target.reset();
     } else {
       alert("❌ Error: " + data.message);
@@ -80,6 +82,7 @@ document.getElementById("form-agregar")?.addEventListener("submit", async (e) =>
     console.error(err);
   }
 });
+
 // ======================
 // ACTUALIZAR USUARIO
 // ======================
@@ -90,7 +93,7 @@ document.getElementById("form-actualizar")?.addEventListener("submit", async (e)
   const nombre = document.getElementById("upd-nombre").value;
   const carrera = document.getElementById("upd-carrera").value;
   const contrasena = document.getElementById("upd-pass").value;
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token");
 
   try {
     const res = await fetch(`${API}/usuario/${numero}`, {
@@ -99,13 +102,12 @@ document.getElementById("form-actualizar")?.addEventListener("submit", async (e)
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
-      // 🔹 Cambiado 'password' → 'contrasena'
       body: JSON.stringify({ nombre, carrera, contrasena })
     });
 
     const data = await res.json();
     if (res.ok) {
-      alert("✅ Usuario actualizado correctamente");
+      alert("Usuario actualizado correctamente");
       e.target.reset();
     } else {
       alert("❌ Error: " + (data.message || data.error));
@@ -114,6 +116,7 @@ document.getElementById("form-actualizar")?.addEventListener("submit", async (e)
     console.error(err);
   }
 });
+
 // ======================
 // ELIMINAR USUARIO
 // ======================
@@ -121,15 +124,14 @@ document.getElementById("form-eliminar")?.addEventListener("submit", async (e) =
   e.preventDefault();
 
   const numero = document.getElementById("del-numero").value;
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token");
+
   if (!confirm(`¿Seguro que deseas eliminar al usuario con número ${numero}?`)) return;
 
   try {
     const res = await fetch(`${API}/usuario/${numero}`, {
       method: "DELETE",
-      headers: {
-        "Authorization": `Bearer ${token}`
-      }
+      headers: { "Authorization": `Bearer ${token}` }
     });
 
     const data = await res.json();
@@ -143,6 +145,7 @@ document.getElementById("form-eliminar")?.addEventListener("submit", async (e) =
     console.error(err);
   }
 });
+
 // -------------------- REGISTRO --------------------
 document.getElementById("form-register")?.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -174,9 +177,10 @@ document.getElementById("form-register")?.addEventListener("submit", async (e) =
     alert("❌ Error conectando con el servidor");
   }
 });
+
 // ===================== VERIFICAR SESIÓN (JWT) =====================
 async function verificarSesion(rolRequerido) {
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token");
   if (!token) {
     alert("⚠️ Debes iniciar sesión primero");
     window.location.href = "index.html";
@@ -190,38 +194,37 @@ async function verificarSesion(rolRequerido) {
 
     const data = await res.json();
 
-    // Token inválido o rol no autorizado
     if (!res.ok || !data.user || (rolRequerido && data.user.rol !== rolRequerido)) {
       alert("❌ No tienes permiso para acceder a esta página");
-      localStorage.clear();
+      sessionStorage.clear();
       window.location.href = "index.html";
       return;
     }
 
-    // Si pasa la verificación, devolvemos el usuario
     return data.user;
 
   } catch (err) {
     console.error("Error verificando sesión:", err);
     alert("❌ Error verificando sesión");
-    localStorage.clear();
+    sessionStorage.clear();
     window.location.href = "index.html";
   }
 }
+
 // ===================== CARGAR DATOS DEL ADMIN =====================
 if (window.location.pathname.includes("admin.html")) {
   document.addEventListener("DOMContentLoaded", async () => {
     const user = await verificarSesion("admin");
     if (!user) return;
 
-    // Mostrar nombre del admin
     document.getElementById("admin-nombre").textContent = user.nombre || "Administrador";
     document.getElementById("ultimo-acceso").textContent = new Date().toLocaleString();
   });
 }
-// -------------------- CARGAR DATOS --------------------
+
+// -------------------- CARGAR DATOS ESTUDIANTE --------------------
 async function cargarDatosEstudiante() {
-  const numero_control = localStorage.getItem("numero_control");
+  const numero_control = sessionStorage.getItem("numero_control");
   if (!numero_control) {
     window.location.href = "index.html";
     return;
@@ -245,6 +248,7 @@ async function cargarDatosEstudiante() {
     alert("❌ Error cargando datos del estudiante");
   }
 }
+
 async function cargarMateriasParaInscribir() {
   try {
     const res = await fetch(`${API}/materias`);
@@ -264,110 +268,22 @@ async function cargarMateriasParaInscribir() {
   }
 }
 
-
-
-// Se llama al cargar la página
 window.addEventListener("DOMContentLoaded", () => {
   cargarMateriasParaInscribir();
   cargarMateriasInscritas();
 });
 
-
-
 if (document.getElementById("nombre")) cargarDatosEstudiante();
-/*
-// -------------------- ACTUALIZAR --------------------
-document.getElementById("form-update")?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const numero_control = localStorage.getItem("numero_control");
-  const nombre = document.getElementById("upd-nombre").value;
-  const carrera = document.getElementById("upd-carrera").value;
-  const contrasena = document.getElementById("upd-pass").value;
-
-  try {
-    const res = await fetch(`${API}/usuario/${numero_control}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nombre, carrera, contrasena })
-    });
-    const data = await res.json();
-
-    if (res.ok) {
-      alert("✅ Usuario actualizado correctamente");
-      document.getElementById("form-update").reset();
-      cargarDatosEstudiante();
-    } else {
-      alert("❌ " + (data.error || "Error al actualizar usuario"));
-    }
-  } catch (err) {
-    console.error(err);
-    alert("❌ Error conectando con el servidor");
-  }
-});
-
-// -------------------- ELIMINAR --------------------
-document.getElementById("form-delete")?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const numero_control = localStorage.getItem("numero_control");
-
-  if (!confirm("¿Estás seguro de eliminar tu usuario?")) return;
-
-  try {
-    const res = await fetch(`${API}/usuario/${numero_control}`, { method: "DELETE" });
-    const data = await res.json();
-
-    if (res.ok) {
-      alert("✅ " + data.message);
-      localStorage.clear();
-      window.location.href = "index.html";
-    } else {
-      alert("❌ " + (data.error || "Error al eliminar usuario"));
-    }
-  } catch (err) {
-    console.error(err);
-    alert("❌ Error conectando con el servidor");
-  }
-});
-// -------------------- PAGO --------------------
-document.getElementById("form-pago")?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const numero_control = localStorage.getItem("numero_control");
-  const tipo = document.getElementById("tipo").value;
-  const monto = document.getElementById("monto").value;
-
-  try {
-    const res = await fetch(`${API}/crear-pago`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ numero_control, tipo, monto })
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      // Redirigir al checkout de Stripe
-      window.location.href = data.url;
-    } else {
-      alert("❌ " + (data.error || "Error al crear el pago"));
-    }
-  } catch (err) {
-    console.error(err);
-    alert("❌ Error conectando con el servidor");
-  }
-});
-
-*/
 
 // ==========================
 //  MATERIAS: AGREGAR Y LISTAR
 // ==========================
-
 document.getElementById("materia-form")?.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const nombre = document.getElementById("materia-nombre").value;
   const creditos = document.getElementById("materia-creditos").value;
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token");
 
   try {
     const res = await fetch(`${API}/materias`, {
@@ -384,7 +300,7 @@ document.getElementById("materia-form")?.addEventListener("submit", async (e) =>
     if (res.ok) {
       alert("✅ Materia agregada correctamente");
       document.getElementById("materia-form").reset();
-      obtenerMaterias(); // refresca la lista
+      obtenerMaterias();
     } else {
       alert("❌ Error al agregar materia: " + (data.error || "Desconocido"));
     }
@@ -394,7 +310,6 @@ document.getElementById("materia-form")?.addEventListener("submit", async (e) =>
   }
 });
 
-// Función para listar materias
 async function obtenerMaterias() {
   try {
     const res = await fetch(`${API}/materias`);
@@ -414,7 +329,7 @@ async function obtenerMaterias() {
 }
 
 async function cargarMateriasInscritas() {
-  const numero_control = localStorage.getItem("numero_control");
+  const numero_control = sessionStorage.getItem("numero_control");
   if (!numero_control) return;
 
   try {
@@ -422,7 +337,7 @@ async function cargarMateriasInscritas() {
     const data = await res.json();
     const tabla = document.getElementById("contenido-avance");
 
-    tabla.innerHTML = ""; // limpiar tabla
+    tabla.innerHTML = "";
 
     data.forEach(m => {
       const fila = document.createElement("tr");
@@ -438,16 +353,18 @@ async function cargarMateriasInscritas() {
     console.error("Error cargando materias del avance", err);
   }
 }
+
 async function cargarSelectMaterias() {
   const res = await fetch(`${API}/materias`);
   const materias = await res.json();
   const select = document.getElementById("ins-materia");
   select.innerHTML = materias.map(m => `<option value="${m.id}">${m.nombre}</option>`).join("");
 }
+
 document.getElementById("form-inscribir")?.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const numero_control = localStorage.getItem("numero_control");
+  const numero_control = sessionStorage.getItem("numero_control");
   const id_materia = document.getElementById("ins-materia").value;
 
   const res = await fetch(`${API}/avance`, {
@@ -460,6 +377,7 @@ document.getElementById("form-inscribir")?.addEventListener("submit", async (e) 
   alert(data.message || data.error);
   cargarMateriasInscritas();
 });
+
 async function cargarMateriasAdmin() {
   const res = await fetch(`${API}/materias`);
   const materias = await res.json();
@@ -497,6 +415,8 @@ if (document.getElementById("nombre")) {
   cargarMateriasInscritas();
   cargarSelectMaterias();
 }
+
+// ===================== LOGOUT =====================
 document.getElementById("btn-logout")?.addEventListener("click", async () => {
   try {
     await fetch(`${API}/logout`, {
@@ -504,20 +424,22 @@ document.getElementById("btn-logout")?.addEventListener("click", async () => {
       credentials: "include"
     });
 
-    localStorage.clear();
+    sessionStorage.clear();
     window.location.href = "index.html";
   } catch (err) {
     console.error(err);
   }
 });
-document.getElementById("form-actualizar-estado").addEventListener("submit", async (e) => {
+
+// ===================== ACTUALIZAR ESTADO MATERIA =====================
+document.getElementById("form-actualizar-estado")?.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const numeroControl = document.getElementById("est-control").value;
   const idMateria = document.getElementById("est-materia").value;
   const nuevoEstado = document.getElementById("est-estado").value;
 
-  const res = await fetch("http://localhost:3000/admin/actualizar-estado", {
+  const res = await fetch(`${API}/admin/actualizar-estado`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ numeroControl, idMateria, nuevoEstado })
@@ -527,6 +449,5 @@ document.getElementById("form-actualizar-estado").addEventListener("submit", asy
   alert(data.mensaje);
 });
 
-
-// Ejecutar cuando se cargue la página
+// Ejecutar cuando cargue
 window.addEventListener("DOMContentLoaded", obtenerMaterias);
